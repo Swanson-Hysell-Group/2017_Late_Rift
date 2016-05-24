@@ -11,10 +11,10 @@ Also included is the module pmagpy (version 3.4) which is part of the PmagPy sof
 To run the code in the notebook it is necessary to both download the code from the Github repository and have an installed Python distribution that includes IPython/Jupyter and the other standard scientific python libraries (http://www.scipy.org/). There are good instructions for installing IPython/Jupyter here: http://ipython.org/install.html. Alternatively you can view the notebooks online with the Jupyter nbviewer:
 
 Paleomagnetic data analysis notebook:
-xxxx
+https://nbviewer.jupyter.org/github/swanson-hysell-group/2016_Late_Rift/blob/master/Code/Late_Rift_Data_Analysis.ipynb
 
 Michipicoten bedding/tilt correction analysis:
-xxxx
+https://nbviewer.jupyter.org/github/swanson-hysell-group/2016_Late_Rift/blob/master/Code/Michipicoten_tilt_analysis/Michipicoten_structural_analysis.ipynb
 
 ## Data
-This folder contains paleomagnetic data of this study (MagIC-formatted files).
+This folder contains paleomagnetic data of this study (MagIC-formatted files), CSV files of previously developed data used in our analysis (see references in manuscript), and reconstruction documents for use within the GPlates software (http://www.gplates.org).
