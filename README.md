@@ -18,3 +18,7 @@ https://nbviewer.jupyter.org/github/swanson-hysell-group/2016_Late_Rift/blob/mas
 
 ## Data
 This folder contains paleomagnetic data of this study (MagIC-formatted files), CSV files of previously developed data used in our analysis (see references in manuscript), and reconstruction documents for use within the GPlates software (http://www.gplates.org).
+
+## Additional Notes
+- [**PmagPy Open-Source Software License**](./Code/pmagpy_3_4/license.txt)
+- The code within the ```Michipicoten_structural_analysis``` Jupyter notebook makes extensive use of the open-source software ```mplstereonet``` developed by Joe Kington (https://github.com/joferkington) and can be viewed/downloaded on GitHub (https://github.com/joferkington/mplstereonet). [**Open-Source Software License for Mplstereonet**](./Code/Michipicoten_tilt_analysis/mplstereonet/LICENSE.txt)
