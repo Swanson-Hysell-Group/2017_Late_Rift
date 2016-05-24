@@ -1,0 +1,37 @@
+-I- cant find zeq_gui_preferences file, using defualt default
+-W- Cant find er_locations.txt in project directory
+-W- Cant find er_ages in project directory
+-I- Read magic file  /Users/lukefairchild765/GitHub_files/Late_Rift_Pmag/data/Michipicoten/magic_measurements.txt
+-I- done sorting meas data
+-I- Reading previous interpretations from pmag* tables
+
+-I- Read old magic file  /Users/lukefairchild765/GitHub_files/Late_Rift_Pmag/data/Michipicoten/pmag_specimens.txt
+
+-I- Delete old magic file  /Users/lukefairchild765/GitHub_files/Late_Rift_Pmag/data/Michipicoten/pmag_specimens.txt
+
+744  records written to file  /Users/lukefairchild765/GitHub_files/Late_Rift_Pmag/data/Michipicoten/pmag_specimens.txt
+specimen data stored in /Users/lukefairchild765/GitHub_files/Late_Rift_Pmag/data/Michipicoten/pmag_specimens.txt
+
+-I- Read old magic file  /Users/lukefairchild765/GitHub_files/Late_Rift_Pmag/data/Michipicoten/pmag_samples.txt
+
+-I- Read old magic file  /Users/lukefairchild765/GitHub_files/Late_Rift_Pmag/data/Michipicoten/pmag_sites.txt
+
+-I- Delete old magic file  /Users/lukefairchild765/GitHub_files/Late_Rift_Pmag/data/Michipicoten/pmag_sites.txt
+
+-I- Read old magic file  /Users/lukefairchild765/GitHub_files/Late_Rift_Pmag/data/Michipicoten/pmag_results.txt
+
+-I- Delete old magic file  /Users/lukefairchild765/GitHub_files/Late_Rift_Pmag/data/Michipicoten/pmag_results.txt
+
+('coord', 'b', 'vgps_level', 'site', 'DefaultAge', ['1083.000000', '1084.000000', u'Ma'], 'avg_directions_by_sample', False, 'avg_by_polarity', False, 'use_criteria', 'none')
+80  records written to file  ./pmag_sites.txt
+ sites written to  ./pmag_sites.txt
+80  records written to file  ./pmag_results.txt
+ results written to  ./pmag_results.txt
+80  records written to file  /Users/lukefairchild765/GitHub_files/Late_Rift_Pmag/data/Michipicoten/pmag_sites.txt
+write new interpretations in /Users/lukefairchild765/GitHub_files/Late_Rift_Pmag/data/Michipicoten/pmag_sites.txt
+
+80  records written to file  /Users/lukefairchild765/GitHub_files/Late_Rift_Pmag/data/Michipicoten/pmag_results.txt
+write new interpretations in /Users/lukefairchild765/GitHub_files/Late_Rift_Pmag/data/Michipicoten/pmag_results.txt
+
+-I- Reading previous interpretations from pmag* tables
+

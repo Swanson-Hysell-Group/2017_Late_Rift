@@ -1,0 +1,140 @@
+001  0.0   0.0    0.0    0.0  000
+001 788.0   0.0    0.0    0.0  000
+001 800.0   0.0  180.0  -50.0  000
+001 812.0   0.0    0.0    0.0  000
+001 1275.0   0.0    0.0    0.0  000
+1000  0.0   0.0    0.0    0.0  001
+1000 540.0  39.99 -154.15 -134.45  001 !Domeier2016 position of Laurentia (Torsvik2014)
+1000 615.0  30.94 -153.24 -144.14  001 !Rotating Laurentia according to Long Range Dykes pole
+1000 720.0 -47.05   -2.16  156.4  001 !Reconstruction from Franklin LIP pole
+1000 750.0 -44.81   -5.15  159.83  001 !Reconstruction from Uinta Mtn pole
+1000 778.0 -43.96  -18.79  146.52  001 !Reconstruction from Tsezotene Sills/Gunbarrel poles
+1000 790.0 -61.72   -7.0  151.72  001 !rotation to Svanbergfjellet
+1000 805.0 -57.06  -27.64  150.23  001 !rotation to L Grus pole
+1000 925.0 -47.63   -0.83  210.86  001 !Laurentia et al. group satisfying Baltica Bratton pole
+1000 945.0 -45.02   -7.83  207.5  001 !Rotate Laurentia to satisfy 945 Ma Sweden dikes pole assuming standard Baltica-Laur fit
+1000 1015.0 -28.41  -32.4  174.59  001 !Laurentia reconstructed using Haliburton Pole
+1000 1095.0 -57.52  -11.05  201.25  001 !Laurentia reconstructed using Portage Lake Pole
+1000 1105.0 -65.69    5.17  210.07  001 !Laurentia reconstructed using 1105 Ma Osler Pole
+1000 1110.0 -68.52   27.25  216.73  001 !Laurentia reconstructed using lower R1 Mamainse Pole
+1000 1141.0 -68.49   18.81  210.49  001 !Laurentia reconstructed using Abitibi pole
+1000 1275.0 -46.04   -1.48  196.66  001 !Pehrsson2015 Laurentia Euler for the end of their model
+3000 0.0  81.5 -110.0  -50.0  1000 !Classic Baltica/Laurentia connection within Rodinia (rotation from Evans2009)
+3000 1120.0  81.5 -110.0  -50.0  1000 !Classic Baltica/Laurentia connection within Rodinia (rotation from Evans2009)
+3000 1274.99  47.51    1.53   48.99  1000 !Handoff of Baltica to Laurentia
+3000 1275.0  43.33  143.86  167.81  001 !Pehrsson2015 Baltica Euler for the end of their model
+3301  0.0   0.0    0.0    0.0  001
+3301 400.0 -81.0  125.0   68.0  1000
+3301 1000.0 -81.0  125.0   68.0  1000 !Rotate Svalbard to Laurentia in fit that works well with East Greenland basin (Maloof et al., 2006 rotation)
+4306  0.0   0.0    0.0    0.0  001 !Aldan in present day location
+4306 700.0 -76.19  -58.4 -170.59  1000 !Continue Nuna Siberia fit up until Franklin LIP
+4306 1274.99 -76.19  -58.4 -170.59  1000 !Handoff of Siberia to Laurentia
+4306 1275.0   5.52  108.38  280.11  001 !Pehrsson2015 Aldan position at end of model
+4303  0.0   0.0    0.0    0.0  4306 !Anabar in present day location
+4303 320.0   0.0    0.0    0.0  4306 !Anabar with Vilyuy rifting having occurred
+4303 350.0  60.0  115.0  -25.0  4306 !Anabar rotated to Aldan to reconstruct for the Devonian Vilyuy Graben
+4303 2000.0  60.0  115.0  -25.0  4306 !Anabar rotated to Aldan to reconstruct for the Devonian Vilyuy Graben
+4301  0.0   0.0    0.0    0.0  4303 !linking Magan to Anabar
+4301 2000.0   0.0    0.0    0.0  4303 !linking Magan to Anabar
+4302  0.0   0.0    0.0    0.0  4303 !linking Tungus to Anabar
+4302 2000.0   0.0    0.0    0.0  4303 !linking Tungus to Anabar
+4304  0.0   0.0    0.0    0.0  4303 !linking Birekte-Hapschan to Anabar
+4304 2000.0   0.0    0.0    0.0  4303 !linking Birekte-Hapschan to Anabar
+4310  0.0   0.0    0.0    0.0  4303 !linking Siberia10 to Anabar
+4310 2000.0   0.0    0.0    0.0  4303 !linking Siberia10 to Anabar
+4311  0.0   0.0    0.0    0.0  4303 !linking Siberia11 to Anabar
+4311 2000.0   0.0    0.0    0.0  4303 !linking Siberia11 to Anabar
+4313  0.0   0.0    0.0    0.0  4303 !linking Akitkan to Anabar
+4313 2000.0   0.0    0.0    0.0  4303 !linking Akitkan to Anabar
+4305  0.0   0.0    0.0    0.0  4306 !linking Olekma to Aldan
+4305 2000.0   0.0    0.0    0.0  4306 !linking Olekma to Aldan
+4307  0.0   0.0    0.0    0.0  4306 !linking Uchur to Aldan
+4307 2000.0   0.0    0.0    0.0  4306 !linking Uchur to Aldan
+4308  0.0   0.0    0.0    0.0  4306 !linking Batomga to Aldan
+4308 2000.0   0.0    0.0    0.0  4306 !linking Batomga to Aldan
+4309  0.0   0.0    0.0    0.0  4306 !linking Tynda-Mogocha to Aldan
+4309 2000.0   0.0    0.0    0.0  4306 !linking Tynda-Mogocha to Aldan
+4312  0.0   0.0    0.0    0.0  4306 !linking Siberia12 to Aldan
+4312 2000.0   0.0    0.0    0.0  4306 !linking Siberia12 to Aldan
+5501  0.0   0.0    0.0    0.0  001 !Modern day position of India
+5501 752.0  21.36   -8.28   23.34  001 !!Constrained by Malani pole
+5501 1080.0  43.1  -74.51  -66.77  001 !! constrained by Majhgawan Kimberlite pole
+5501 1192.0  36.82  157.32  -80.87  001 !!constrained by Harohalli pole
+5501 1275.0  38.69  178.74  -96.06  001 !Pehrsson2015 India Euler for the end of their model
+6603  0.0   0.0    0.0    0.0  001 !Yangtze in present day location
+6603 580.0 -44.17  -46.71  -96.07  001 !Doushantuo B pole
+6603 645.0 -24.25  -84.72  -93.04  001 !statisfy Nantuo B pole
+6603 730.0   3.79 -110.14  -87.23  001 !statisfy Liantuo A pole
+6603 821.0 -35.52 -144.7  -99.19  001 !statisfy Xiaofeng A pole
+6603 1109.99 -12.44 -175.09  -81.96  001 !Yangtze drifting away from Laurentia handoff to spin axis
+6603 1110.0 -45.7  -42.92  161.96  1000 !Yangtze drifting away from Laurentia (not constrained by anything)
+6603 1274.99 -45.7  -42.92  161.96  1000 !Yangtze drifting north with Laurentia in Pehrsson2015 position
+6603 1275.0  43.09  -33.56 -303.6  001 !Pehrsson2015 Yangtze Euler for the end of their model
+6601  0.0   0.0    0.0    0.0  6603 !Cathaysia connection to Yangtze persists to present day
+6601 825.0   0.0    0.0    0.0  6603 !Cathaysia sutured to Yangtze associated with Jiangnan Orogen
+6601 900.0  35.94   99.09  -18.85  6603 !Keep Cathaysia and Yangtze in same position prior to scissoring
+6601 1274.99  35.94   99.09  -18.85  6603 !Handoff of Cathaysia to Yangtze in Pehrsson2015 model position
+6601 1275.0  23.89  -36.58 -300.78  001 !Pehrsson2015 Cathaysia Euler for the end of their model
+7701  0.0   0.0    0.0    0.0  001
+7701 820.0   1.02  -25.0 -207.38  1000 !Congo rotated to Laurentia et al. satisfying Bahia pole with Baltica Bratton pole
+7701 925.0  67.81  -45.49 -140.47  1000 !Congo rotated to Laurentia et al. satisfying Bahia pole with Baltica Bratton pole and matching Gagwe to Gunbarrel pole
+7701 1020.0   67.81  -45.49 -140.47  1000 !Congo rotated to Laurentia et al. satisfying Bahia pole with Baltica Bratton pole
+7701 1275   67.81  -45.49 -140.47  1000 !Congo rotated to Laurentia et al. satisfying Bahia pole with Baltica Bratton pole
+7701 1800.0   0.0    0.0    0.0  1000
+7702  0.0   0.0    0.0    0.0  001
+7702 400.0   0.0    0.0    0.0  001
+7702 799.0 -49.32  -11.41  158.7  001 ! Kalahari model versus Laurentia from Swanson-Hysell2015
+7702 800.0   7.52  -22.67  249.73  001 ! Kalahari model from Swanson-Hysell2015
+7702 800.0  11.22  -27.62 -161.73  1000 ! Kalahari model from Swanson-Hysell2015
+7702 801.0  11.42  -27.7 -161.14  1000 ! Kalahari model from Swanson-Hysell2015
+7702 1000.0  12.17  -27.67 -160.65  1000 ! Kalahari model from Swanson-Hysell2015
+7702 1030.0  11.89  -27.3 -160.6  1000 ! Kalahari model from Swanson-Hysell2015
+7702 1050.0  11.89  -27.3 -160.6  1000 ! Kalahari model from Swanson-Hysell2015
+7702 1100.0   6.21  -21.03 -123.72  1000 ! Kalahari model from Swanson-Hysell2015
+7702 1110.0   4.24  -19.51 -118.99  1000 ! Kalahari model from Swanson-Hysell2015
+7702 1140.0   0.95  -16.94 -113.18  1000 ! Kalahari model from Swanson-Hysell2015
+7702 1200.0   0.95  -16.94 -113.18  1000 ! Kalahari model from Swanson-Hysell2015
+8001  0.0   0.0    0.0    0.0  000 ! South Australia is the master craton in this model
+8001 750.0  -2.53   30.71   57.13  000 ! hand off back to spin axis from Laurentia
+8001 750.1 -27.15  -27.46 -127.92  1000 ! Australia constrained by Mundine Wells between gunbarrel and franklin
+8001 1274.0 -27.15  -27.46 -127.92  1000 ! Hand off Australia to Laurentia
+8001 1275.0  -8.76   -9.61  106.55  000 ! Gawler Craton rotation at end of  Pehrsson2015 model
+8002  0.0   0.0    0.0    0.0  8001 ! Link Curnamona to South Australia Craton
+8002 1400.0   0.0    0.0    0.0  8001 ! Link Curnamona to South Australia Craton
+8003  0.0   0.0    0.0    0.0  8001 ! Link Pilbara to South Australia Craton
+8003 1190.0   0.0    0.0    0.0  8001 ! Suturing of West Australia to South Australia (Albany Fraser Belt) rotation of U of Sydney Group
+8003 1650.0  14.17  -47.22   44.02  8001 ! Pilbara and South Australia at some distance rotation of U of Sydney Group
+8004  0.0   0.0    0.0    0.0  8001 ! North Australia Craton linked to South Australia Craton with present day relationship
+8004 540.0   0.0    0.0    0.0  8001 ! North Australia Craton linked to South Australia Craton with present day relationship (end of Petermann orogeny)
+8004 600.0  20.0  -45.0   40.0  8001 ! North Australia with Li and Evans 2011 applied (start of Petermann orogeny)
+8004 1100.0  20.0  -45.0   40.0  8001 ! North Australia with Li and Evans 2011 applied
+8004 1350.0  25.51  -38.86   44.1  8001 !North Australia prior to Albany-Fraser belt development rotation of U of Sydney Group
+8005  0.0   0.0    0.0    0.0  8001 ! Link Yilgarn to South Australia Craton with present day relationship
+8005 1800.0   0.0    0.0    0.0  8001 ! Link Yilgarn to South Australia Craton with present day relationship
+8006  0.0   0.0    0.0    0.0  8004 ! Link Kimberley to North Australia Craton with present day relationship
+8006 1800.0   0.0    0.0    0.0  8004 ! Link Kimberley to North Australia Craton with present day relationship
+8007  0.0   0.0    0.0    0.0  8004 ! Link Halls Creek Orogen to North Australia Craton
+8007 1800.0   0.0    0.0    0.0  8004 ! Link Halls Creek Orogen to North Australia Craton
+8008  0.0   0.0    0.0    0.0  8004 ! Link Bannerman to North Australia Craton
+8008 1800.0   0.0    0.0    0.0  8004 ! Link Bannerman to North Australia Craton
+8009  0.0   0.0    0.0    0.0  8004 ! Link Arunta Block to North Australia Craton
+8009 1600.0   0.0    0.0    0.0  8004 ! Link Arunta Block to North Australia Craton
+8010  0.0   0.0    0.0    0.0  8004 ! Amadeus Basin is on Arunta Block so link it to North Australia Craton too
+8010 1600.0   0.0    0.0    0.0  8004 ! Amadeus Basin is on Arunta Block so link it to North Australia Craton too
+8011  0.0   0.0    0.0    0.0  8005 ! Link Albany Fraser Orogen with Yilgarn Craton
+8011 1800.0   0.0    0.0    0.0  8005 ! Link Albany Fraser Orogen with Yilgarn Craton
+8012  0.0   0.0    0.0    0.0  8004 ! Patterson Orogen linked to North Australia Craton
+8012 1800.0   0.0    0.0    0.0  8004 ! Patterson Orogen linked to North Australia Craton
+8013  0.0   0.0    0.0    0.0  8005 ! Link Rudall to Yilgarn Craton
+8013 1800.0   0.0    0.0    0.0  8005 ! Link Rudall to Yilgarn Craton
+8014  0.0   0.0    0.0    0.0  8004 ! Link Arunta Back Arc to North Australia Craton
+8014 1800.0   0.0    0.0    0.0  8004 ! Link Arunta Back Arc to North Australia Craton
+8015  0.0   0.0    0.0    0.0  8004 ! Link Musgrave Block to North Australia Craton
+8015 1275.0   0.0    0.0    0.0  8004 ! Link Musgrave Block to North Australia Craton
+8016  0.0   0.0    0.0    0.0  8005 ! Link Gascoyne to Yilgarn
+8016 1800.0   0.0    0.0    0.0  8005 ! Link Gascoyne to Yilgarn
+8017  0.0   0.0    0.0    0.0  8004 ! Link Pine Creek Orogen to North Australian Craton
+8017 1800.0   0.0    0.0    0.0  8004 ! Link Pine Creek Orogen to North Australian Craton
+8803  0.0   0.0    0.0    0.0  000 ! Mawson continent in present day position
+8803 95.0   1.47   37.55   30.35  8001 ! Mawsonland link to South Australia Craton (beginning of Tasman Sea opening)
+8803 1275.0   1.47   37.55   30.35  8001 ! Mawsonland link to South Australia Craton
