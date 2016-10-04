@@ -17,7 +17,7 @@ Michipicoten bedding/tilt correction analysis:
 https://nbviewer.jupyter.org/github/swanson-hysell-group/2016_Late_Rift/blob/master/Code/Michipicoten_tilt_analysis/Michipicoten_structural_analysis.ipynb
 
 ## Data
-This folder contains paleomagnetic data of this study (MagIC-formatted files), CSV files of previously developed data used in our analysis (see references in manuscript), and reconstruction documents for use within the GPlates software (http://www.gplates.org).
+This folder contains paleomagnetic data of this study (MagIC-formatted files), CSV files of previously developed data used in our analysis (see references in manuscript), and reconstruction documents for use within the GPlates software (http://www.gplates.org). All paleomagnetic data of this study has been uploaded to the Magnetics Information Consortium (MagIC) database and can be viewed at http://earthref.org/MagIC/11452/.
 
 ## Additional Notes
 - [**PmagPy Open-Source Software License**](./Code/pmagpy_3_4/license.txt)
