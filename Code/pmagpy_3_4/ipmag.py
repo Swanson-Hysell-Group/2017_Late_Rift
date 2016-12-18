@@ -1,5 +1,8 @@
 import pmag
 import pmagplotlib
+import data_model3 as data_model
+from new_builder import Contribution
+import validate_upload3 as val_up3
 import copy
 import numpy as np
 import random
@@ -13,26 +16,37 @@ import math
 #from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 #from matplotlib.backends.backend_wx import NavigationToolbar2Wx
 from matplotlib.figure import Figure
+from mapping import map_magic
 
 
 def igrf(input_list):
     """
-    Prints out Declination, Inclination, Intensity from the IGRF model.
+    Determine Declination, Inclination, Intensity from the IGRF model.
+    (http://www.ngdc.noaa.gov/IAGA/vmod/igrf.html)
 
-    Arguments
+    Parameters
     ----------
     input_list : list with format [Date, Altitude, Latitude, Longitude]
     Date must be in format XXXX.XXXX with years and decimals of a year (A.D.)
+
+    Returns
+    ----------
+    igrf_array : array of IGRF values (0: dec; 1: inc; 2: intensity)
     """
-    x,y,z,f=pmag.doigrf(input_list[3]%360.,input_list[2],input_list[1],input_list[0])
-    Dir=pmag.cart2dir((x,y,z))
-    return Dir
+    x,y,z,f = pmag.doigrf(input_list[3]%360.,input_list[2],input_list[1],input_list[0])
+    igrf_array = pmag.cart2dir((x,y,z))
+    return igrf_array
 
 
 def igrf_print(igrf_array):
+    """
+    Print out Declination, Inclination, Intensity from an array returned from
+    the igrf function.
+    """
+
     print "Declination: %0.3f"%(igrf_array[0])
     print "Inclination: %0.3f"%(igrf_array[1])
-    print "Intensity: %0.3f nT"%(igrf_array[0])
+    print "Intensity: %0.3f nT"%(igrf_array[2])
 
 
 def fisher_mean(dec=None, inc=None, di_block=None):
@@ -42,12 +56,15 @@ def fisher_mean(dec=None, inc=None, di_block=None):
     di_block (a nested list a nested list of [dec,inc,1.0]). Returns a
     dictionary with the Fisher mean and statistical parameters.
 
-    Keywords
+    Parameters
     ----------
-    dec: list of declinations
-    inc: list of inclinations
+    dec: list of declinations (or longitudes)
+    inc: list of inclinations (or latitudes)
+
+    or
 
     di_block: a nested list of [dec,inc,1.0]
+
     A di_block can be provided instead of dec, inc lists in which case it will
     be used. Either dec, inc lists or a di_block need to passed to the function.
     """
@@ -58,19 +75,22 @@ def fisher_mean(dec=None, inc=None, di_block=None):
         return pmag.fisher_mean(di_block)
 
 
-def bingham_mean(dec, inc, di_block=None):
+def bingham_mean(dec=None, inc=None, di_block=None):
     """
     Calculates the Bingham mean and associated parameters from either a list of
     declination values and a separate list of inclination values or from a
     di_block (a nested list a nested list of [dec,inc,1.0]). Returns a
     dictionary with the Bingham mean and statistical parameters.
 
-    Keywords
+    Parameters
     ----------
     dec: list of declinations
     inc: list of inclinations
 
+    or
+
     di_block: a nested list of [dec,inc,1.0]
+
     A di_block can be provided instead of dec, inc lists in which case it will
     be used. Either dec, inc lists or a di_block need to passed to the function.
     """
@@ -79,6 +99,32 @@ def bingham_mean(dec, inc, di_block=None):
         return pmag.dobingham(di_block)
     else:
         return pmag.dobingham(di_block)
+
+
+def kent_mean(dec=None, inc=None, di_block=None):
+    """
+    Calculates the Kent mean and associated parameters from either a list of
+    declination values and a separate list of inclination values or from a
+    di_block (a nested list a nested list of [dec,inc,1.0]). Returns a
+    dictionary with the Kent mean and statistical parameters.
+
+    Parameters
+    ----------
+    dec: list of declinations
+    inc: list of inclinations
+
+    or
+
+    di_block: a nested list of [dec,inc,1.0]
+
+    A di_block can be provided instead of dec, inc lists in which case it will
+    be used. Either dec, inc lists or a di_block need to passed to the function.
+    """
+    if di_block is None:
+        di_block = make_di_block(dec,inc)
+        return pmag.dokent(di_block,len(di_block))
+    else:
+        return pmag.dokent(di_block,len(di_block))
 
 
 def print_direction_mean(mean_dictionary):
@@ -86,9 +132,9 @@ def print_direction_mean(mean_dictionary):
     Does a pretty job printing a Fisher mean and associated statistics for
     directional data.
 
-    Arguments
+    Parameters
     ----------
-    mean_dictionary: output of pmag.fisher_mean
+    mean_dictionary: output dictionary of pmag.fisher_mean
     """
     print 'Dec: ' + str(round(mean_dictionary['dec'],1)) + '  Inc: ' + str(round(mean_dictionary['inc'],1))
     print 'Number of directions in mean (n): ' + str(mean_dictionary['n'])
@@ -101,11 +147,11 @@ def print_pole_mean(mean_dictionary):
     Does a pretty job printing a Fisher mean and associated statistics for
     mean paleomagnetic poles.
 
-    Arguments
+    Parameters
     ----------
-    mean_dictionary: output of pmag.fisher_mean
+    mean_dictionary: output dictionary of pmag.fisher_mean
     """
-    print 'Plong: ' + str(round(mean_dictionary['dec'],1)) + '  Plat: ' + str(round(mean_dictionary['inc'],1))
+    print 'Plon: ' + str(round(mean_dictionary['dec'],1)) + '  Plat: ' + str(round(mean_dictionary['inc'],1))
     print 'Number of directions in mean (n): ' + str(mean_dictionary['n'])
     print 'Angular radius of 95% confidence (A_95): ' + str(round(mean_dictionary['alpha95'],1))
     print 'Precision parameter (k) estimate: ' + str(round(mean_dictionary['k'],1))
@@ -179,7 +225,7 @@ def unsquish(incs,f):
     This function applies an unflattening factor (f) to inclination data
     (incs) and returns 'unsquished' values.
 
-    Arguments
+    Parameters
     ----------
     incs : list of inclination values or a single value
     f : unflattening factor (between 0.0 and 1.0)
@@ -188,15 +234,15 @@ def unsquish(incs,f):
         length = len(incs)
         incs_unsquished = []
         for n in range(0,length):
-            inc_rad = incs[n]*np.pi/180. # convert to radians
+            inc_rad = np.deg2rad(incs[n]) # convert to radians
             inc_new_rad = (1./f)*np.tan(inc_rad)
-            inc_new = np.arctan(inc_new_rad)*180./np.pi # convert back to degrees
+            inc_new = np.rad2deg(np.arctan(inc_new_rad)) # convert back to degrees
             incs_unsquished.append(inc_new)
         return incs_unsquished
     except:
-        inc_rad = incs*np.pi/180. # convert to radians
+        inc_rad = np.deg2rad(incs) # convert to radians
         inc_new_rad = (1./f)*np.tan(inc_rad)
-        inc_new = np.arctan(inc_new_rad)*180./np.pi # convert back to degrees
+        inc_new = np.rad2deg(np.arctan(inc_new_rad)) # convert back to degrees
         return inc_new
 
 
@@ -205,7 +251,7 @@ def squish(incs,f):
     This function applies an flattening factor (f) to inclination data
     (incs) and returns 'squished' values.
 
-    Arguments
+    Parameters
     ----------
     incs : list of inclination values or a single value
     f : flattening factor (between 0.0 and 1.0)
@@ -236,13 +282,17 @@ def do_flip(dec=None, inc=None, di_block=None):
     nested list of [dec,inc,1.0]) is specified then it is used and the function
     returns a di_block with the flipped directions.
 
-    Keywords (defaults are used if not specified)
+    Parameters
     ----------
     dec: list of declinations
     inc: list of inclinations
 
+    or
+
     di_block: a nested list of [dec,inc,1.0]
-    (di_block can be provided instead of dec, inc in which case it will be used)
+
+    A di_block can be provided instead of dec, inc lists in which case it will
+    be used. Either dec, inc lists or a di_block need to passed to the function.
     """
     if di_block is None:
         dec_flip = []
@@ -259,7 +309,7 @@ def do_flip(dec=None, inc=None, di_block=None):
         return dflip
 
 
-def bootstrap_fold_test(Data,num_sims=1000,min_untilt=-10,max_untilt=120, bedding_error=0, save = False, save_folder = '.',fmt = 'svg'):
+def bootstrap_fold_test(Data,num_sims=1000,min_untilt=-10,max_untilt=120, bedding_error=0, save = False, save_folder = '.',fmt = 'svg',ninety_nine=False):
     """
     Conduct a bootstrap fold test (Tauxe and Watson, 1994)
 
@@ -271,11 +321,11 @@ def bootstrap_fold_test(Data,num_sims=1000,min_untilt=-10,max_untilt=120, beddin
     maxima. If the confidence bounds enclose 100% unfolding, the data "pass"
     the fold test.
 
-    Required Arguments
+    Required Parameters
     ----------
     Data : a numpy array of directional data [dec,inc,dip_direction,dip]
 
-    Optional Keywords (defaults are used if not specified)
+    Optional Parameters (defaults are used if not specified)
     ----------
     NumSims : number of bootstrap samples (default is 1000)
     min_untilt : minimum percent untilting applied to the data (default is -10%)
@@ -342,6 +392,9 @@ def bootstrap_fold_test(Data,num_sims=1000,min_untilt=-10,max_untilt=120, beddin
     plt.axvline(x=Untilt[lower],ymin=0,ymax=1,linewidth=1,linestyle='--')
     plt.axvline(x=Untilt[upper],ymin=0,ymax=1,linewidth=1,linestyle='--')
     title = '%i - %i %s'%(Untilt[lower],Untilt[upper],'percent unfolding')
+    if ninety_nine is True:
+        print 'tightest grouping of vectors obtained at (99% confidence bounds):'
+        print int(.005*num_sims), ' - ', int(.995*num_sims),'percent unfolding'
     print ""
     print 'tightest grouping of vectors obtained at (95% confidence bounds):'
     print title
@@ -363,12 +416,12 @@ def common_mean_bootstrap(Data1,Data2,NumSims=1000, save=False, save_folder = '.
     one for z). If the 95 percent confidence bounds for each component overlap
     each other, the two directions are not significantly different.
 
-    Arguments
+    Parameters
     ----------
     Data1 : a nested list of directional data [dec,inc] (a di_block)
     Data2 : a nested list of directional data [dec,inc] (a di_block)
 
-    Optional Keywords (defaults are used if not specified)
+    Optional Parameters (defaults are used if not specified)
     ----------
     NumSims : number of bootstrap samples (default is 1000)
     save : optional save of plots (default is False)
@@ -445,12 +498,12 @@ def common_mean_watson(Data1,Data2,NumSims=5000,plot='no', save=False, save_fold
     angle between the two sample mean directions and the corresponding
     McFadden and McElhinny (1990) classification is printed.
 
-    Required Arguments
+    Required Parameters
     ----------
     Data1 : a nested list of directional data [dec,inc] (a di_block)
     Data2 : a nested list of directional data [dec,inc] (a di_block)
 
-    Optional Keywords (defaults are used if not specified)
+    Optional Parameters (defaults are used if not specified)
     ----------
     NumSims : number of Monte Carlo simulations (default is 5000)
     plot : the default is no plot ('no'). Putting 'yes' will the plot the CDF from
@@ -581,17 +634,19 @@ def reversal_test_bootstrap(dec=None, inc=None, di_block=None, plot_stereo = Fal
     determine whether two populations of directions could be from an antipodal
     common mean.
 
-    Required Arguments
+    Required Parameters
     ----------
     dec: list of declinations
     inc: list of inclinations
 
     or
 
-    di_block: a nested list of [dec,inc,1.0]
-    (di_block can be provided instead of dec, inc in which case it will be used)
+    di_block: a nested list of [dec,inc]
 
-    Optional Keywords (defaults are used if not specified)
+    A di_block can be provided instead of dec, inc lists in which case it will
+    be used. Either dec, inc lists or a di_block need to passed to the function.
+
+    Optional Parameters (defaults are used if not specified)
     ----------
     plot_stereo : before plotting the CDFs, plot stereonet with the
     bidirectionally separated data (default is False)
@@ -624,17 +679,19 @@ def reversal_test_MM1990(dec=None, inc=None, di_block=None, plot_CDF=False, plot
     the critical angle between the two sample mean directions and the
     corresponding McFadden and McElhinny (1990) classification.
 
-    Required Arguments
+    Required Parameters
     ----------
     dec: list of declinations
     inc: list of inclinations
 
     or
 
-    di_block: a nested list of [dec,inc,1.0]
-    (di_block can be provided instead of dec, inc in which case it will be used)
+    di_block: a nested list of [dec,inc]
 
-    Optional Keywords (defaults are used if not specified)
+    A di_block can be provided instead of dec, inc lists in which case it will
+    be used. Either dec, inc lists or a di_block need to passed to the function.
+
+    Optional Parameters (defaults are used if not specified)
     ----------
     plot_CDF : plot the CDF accompanying the printed results (default is False)
     plot_stereo : plot stereonet with the bidirectionally separated data
@@ -669,14 +726,16 @@ def fishqq(lon=None, lat=None, di_block=None):
     Test whether a distribution is Fisherian and make a corresponding Q-Q plot.
     The Q-Q plot shows the data plotted against the value expected from a
     Fisher distribution. The first plot is the uniform plot which is the
-    Fisher model distribution in terms of longitude. The second plot is the
-    exponential plot which is the Fisher model distribution in terms of latitude.
-    In addition to the plots, the test statistics Mu (uniform) and Me (exponential)
-    are calculated and compared against the critical test values. If Mu or Me are
-    too large in comparision to the test statistics, the hypothesis that the
-    distribution is Fisherian is rejected (see Fisher et al., 1987).
+    Fisher model distribution in terms of longitude (declination). The second
+    plot is the exponential plot which is the Fisher model distribution in terms
+    of latitude (inclination). In addition to the plots, the test statistics Mu
+    (uniform) and Me (exponential) are calculated and compared against the
+    critical test values. If Mu or Me are too large in comparision to the test
+    statistics, the hypothesis that the distribution is Fisherian is rejected
+    (see Fisher et al., 1987).
 
     Parameters:
+    -----------
     lon : longitude or declination of the data
     lat : latitude or inclination of the data
 
@@ -686,6 +745,7 @@ def fishqq(lon=None, lat=None, di_block=None):
     (di_block can be provided instead of lon, lat in which case it will be used)
 
     Output:
+    -----------
     dictionary containing
     lon : mean longitude (or declination)
     lat : mean latitude (or inclination)
@@ -745,8 +805,10 @@ def fishqq(lon=None, lat=None, di_block=None):
                 I1.append(irot)
                 Dtit='Mode 1 Declinations'
                 Itit='Mode 1 Inclinations'
-        Mu_n,Mu_ncr=pmagplotlib.plotQQunf(QQ['unf1'],D1,Dtit) # make plot
-        Me_n,Me_ncr=pmagplotlib.plotQQexp(QQ['exp1'],I1,Itit) # make plot
+        plt.figure(figsize=(6,3))
+        Mu_n,Mu_ncr=pmagplotlib.plotQQunf(QQ['unf1'],D1,Dtit,subplot=True) # make plot
+        Me_n,Me_ncr=pmagplotlib.plotQQexp(QQ['exp1'],I1,Itit,subplot=True) # make plot
+        plt.tight_layout()
         if Mu_n<=Mu_ncr and Me_n<=Me_ncr:
            F_n = 'consistent with Fisherian model'
         else:
@@ -776,8 +838,10 @@ def fishqq(lon=None, lat=None, di_block=None):
             I2.append(irot)
             Dtit='Mode 2 Declinations'
             Itit='Mode 2 Inclinations'
-        Mu_r,Mu_rcr=pmagplotlib.plotQQunf(QQ['unf2'],D2,Dtit) # make plot
-        Me_r,Me_rcr=pmagplotlib.plotQQexp(QQ['exp2'],I2,Itit) # make plot
+        plt.figure(figsize=(6,3))
+        Mu_r,Mu_rcr=pmagplotlib.plotQQunf(QQ['unf2'],D2,Dtit,subplot=True) # make plot
+        Me_r,Me_rcr=pmagplotlib.plotQQexp(QQ['exp2'],I2,Itit,subplot=True) # make plot
+        plt.tight_layout()
 
         if Mu_r<=Mu_rcr and Me_r<=Me_rcr:
            F_r = 'consistent with Fisherian model'
@@ -801,22 +865,65 @@ def fishqq(lon=None, lat=None, di_block=None):
         print 'you need N> 10 for at least one mode'
 
 
-def lat_from_inc(inc):
+def lat_from_inc(inc,a95=None):
     """
     Calculate paleolatitude from inclination using the dipole equation
+
+    Required Parameter
+    ----------
+    inc: (paleo)magnetic inclination in degrees
+
+    Optional Parameter
+    ----------
+    a95: 95% confidence interval from Fisher mean
+
+    Returns
+    ----------
+    if a95 is provided paleo_lat, paleo_lat_max, paleo_lat_min are returned
+    otherwise, it just returns paleo_lat
     """
     rad=np.pi/180.
-    paleo_lat=np.arctan(0.5*np.tan(inc*rad))/rad
-    return paleo_lat
+    paleo_lat = np.arctan(0.5*np.tan(inc*rad))/rad
+    if a95 is not None:
+        paleo_lat_max = np.arctan(0.5*np.tan((inc+a95)*rad))/rad
+        paleo_lat_min = np.arctan(0.5*np.tan((inc-a95)*rad))/rad
+        return paleo_lat, paleo_lat_max, paleo_lat_min
+    else:
+        return paleo_lat
+
+
+def lat_from_pole(ref_loc_lon,ref_loc_lat,pole_plon,pole_plat):
+    """
+    Calculate paleolatitude for a reference location based on a paleomagnetic pole
+
+    Required Parameters
+    ----------
+    ref_loc_lon: longitude of reference location in degrees
+    ref_loc_lat: latitude of reference location
+    pole_plon: paleopole longitude in degrees
+    pole_plat: paleopole latitude in degrees
+    """
+
+    ref_loc = (ref_loc_lon,ref_loc_lat)
+    pole = (pole_plon, pole_plat)
+    paleo_lat = 90-pmag.angle(pole,ref_loc)
+    return float(paleo_lat)
 
 
 def inc_from_lat(lat):
     """
-    Calculate inclination predicted from latitude using the dipole equation.
+    Calculate inclination predicted from latitude using the dipole equation
+
+    Parameter
+    ----------
+    lat: latitude in degrees
     """
     rad=np.pi/180.
     inc=np.arctan(2*np.tan(lat*rad))/rad
     return inc
+
+
+
 
 
 def plot_net(fignum):
@@ -873,7 +980,10 @@ def plot_net(fignum):
     plt.axis((-1.05,1.05,-1.05,1.05))
 
 
-def plot_di(dec=None, inc=None, di_block=None, color='k', marker='o', markersize=20, legend='no', label=''):
+def plot_XY(X=None, Y=None,sym='ro'):
+    plt.plot(X,Y,sym)
+
+def plot_di(dec=None, inc=None, di_block=None, color='k', marker='o', markersize=20, legend='no', label='',title=''):
     """
     Plot declination, inclination data on an equal area plot.
 
@@ -883,7 +993,7 @@ def plot_di(dec=None, inc=None, di_block=None, color='k', marker='o', markersize
     >plt.figure(num=fignum,figsize=(10,10),dpi=160)
     >ipmag.plot_net(fignum)
 
-    Required Arguments
+    Required Parameters
     -----------
     dec : declination being plotted
     inc : inclination being plotted
@@ -893,7 +1003,7 @@ def plot_di(dec=None, inc=None, di_block=None, color='k', marker='o', markersize
     di_block: a nested list of [dec,inc,1.0]
     (di_block can be provided instead of dec, inc in which case it will be used)
 
-    Optional Keywords
+    Optional Parameters (defaults are used if not specified)
     -----------
     color : the default color is black. Other colors can be chosen (e.g. 'r')
     marker : the default marker is a circle ('o')
@@ -907,7 +1017,11 @@ def plot_di(dec=None, inc=None, di_block=None, color='k', marker='o', markersize
     Y_up = []
 
     if di_block is not None:
-        dec, inc = unpack_di_block(di_block)
+        di_lists = unpack_di_block(di_block)
+        if len(di_lists) == 3:
+            dec, inc, intensity = di_lists
+        if len(di_lists) == 2:
+            dec, inc = di_lists
 
     try:
         length = len(dec)
@@ -938,6 +1052,8 @@ def plot_di(dec=None, inc=None, di_block=None, color='k', marker='o', markersize
     if legend=='yes':
         plt.legend(loc=2)
     plt.tight_layout()
+    if title!="":
+        plt.title(title)
 
 
 def plot_di_mean(dec,inc,a95,color='k',marker='o',markersize=20,label='',legend='no'):
@@ -951,13 +1067,13 @@ def plot_di_mean(dec,inc,a95,color='k',marker='o',markersize=20,label='',legend=
     >plt.figure(num=fignum,figsize=(10,10),dpi=160)
     >ipmag.plot_net(fignum)
 
-    Required Arguments
+    Required Parameters
     -----------
     dec : declination of mean being plotted
     inc : inclination of mean being plotted
     a95 : a95 confidence ellipse of mean being plotted
 
-    Optional Keywords
+    Optional Parameters (defaults are used if not specified)
     -----------
     color : the default color is black. Other colors can be chosen (e.g. 'r').
     marker : the default is a circle. Other symbols can be chosen (e.g. 's').
@@ -985,20 +1101,60 @@ def plot_di_mean(dec,inc,a95,color='k',marker='o',markersize=20,label='',legend=
     plt.plot(Xcirc,Ycirc,c=color)
     plt.tight_layout()
 
+def plot_di_mean_bingham(bingham_dictionary,fignum=1,color='k',marker='o',markersize=20,label='',legend='no'):
+    """
+    Plot a mean direction (declination, inclination) bingham confidence ellipse.
 
-def plot_pole(mapname,plong,plat,A95,label='',color='k',marker='o',markersize=20,legend='no'):
+    Required Parameters
+    -----------
+    bingham_dictionary : a dictionary generated by the pmag.dobingham function
+
+    """
+    pars = []
+    pars.append(bingham_dictionary['dec'])
+    pars.append(bingham_dictionary['inc'])
+    pars.append(bingham_dictionary['Zeta'])
+    pars.append(bingham_dictionary['Zdec'])
+    pars.append(bingham_dictionary['Zinc'])
+    pars.append(bingham_dictionary['Eta'])
+    pars.append(bingham_dictionary['Edec'])
+    pars.append(bingham_dictionary['Einc'])
+
+    DI_dimap=pmag.dimap(bingham_dictionary['dec'],bingham_dictionary['inc'])
+    if bingham_dictionary['inc'] < 0:
+        plt.scatter(DI_dimap[0],DI_dimap[1],
+        edgecolors=color ,facecolors='white',
+        marker=marker,s=markersize,label=label)
+    if bingham_dictionary['inc'] >= 0:
+        plt.scatter(DI_dimap[0],DI_dimap[1],
+        edgecolors=color,facecolors=color,
+        marker=marker,s=markersize,label=label)
+    pmagplotlib.plotELL(fignum,pars,color,0,1)
+
+def plot_pole(mapname,plon,plat,A95,label='',color='k',marker='o',markersize=20,legend='no'):
     """
     This function plots a paleomagnetic pole and A95 error ellipse on whatever
     current map projection has been set using the basemap plotting library.
 
-    Required Arguments
+    Before this function is called, a plot needs to be initialized with code
+    that looks something like:
+    >from mpl_toolkits.basemap import Basemap
+    >mapname = Basemap(projection='ortho',lat_0=35,lon_0=200)
+    >plt.figure(figsize=(6, 6))
+    >mapname.drawcoastlines(linewidth=0.25)
+    >mapname.fillcontinents(color='bisque',lake_color='white',zorder=1)
+    >mapname.drawmapboundary(fill_color='white')
+    >mapname.drawmeridians(np.arange(0,360,30))
+    >mapname.drawparallels(np.arange(-90,90,30))
+
+    Required Parameters
     -----------
     mapname : the name of the current map that has been developed using basemap
-    plong : the longitude of the paleomagnetic pole being plotted (in degrees E)
+    plon : the longitude of the paleomagnetic pole being plotted (in degrees E)
     plat : the latitude of the paleomagnetic pole being plotted (in degrees)
     A95 : the A_95 confidence ellipse of the paleomagnetic pole (in degrees)
 
-    Optional Keywords
+    Optional Parameters (defaults are used if not specified)
     -----------
     color : the default color is black. Other colors can be chosen (e.g. 'r')
     marker : the default is a circle. Other symbols can be chosen (e.g. 's')
@@ -1006,37 +1162,37 @@ def plot_pole(mapname,plong,plat,A95,label='',color='k',marker='o',markersize=20
     label : the default is no label. Labels can be assigned.
     legend : the default is no legend ('no'). Putting 'yes' will plot a legend.
     """
-    centerlon, centerlat = mapname(plong,plat)
+    centerlon, centerlat = mapname(plon,plat)
     A95_km=A95*111.32
     mapname.scatter(centerlon,centerlat,marker=marker,color=color,s=markersize,label=label,zorder=101)
-    equi(mapname, plong, plat, A95_km,color)
+    equi(mapname, plon, plat, A95_km,color)
     if legend=='yes':
         plt.legend(loc=2)
 
 
-def plot_pole_colorbar(mapname,plong,plat,A95,cmap,vmin,vmax,label='',color='k',marker='o',markersize='20',alpha='1.0',legend='no'):
+def plot_pole_colorbar(mapname,plon,plat,A95,cmap,vmin,vmax,label='',color='k',marker='o',markersize='20',alpha='1.0',legend='no'):
     """
     This function plots a paleomagnetic pole and A95 error ellipse on whatever
     current map projection has been set using the basemap plotting library.
 
-    Required Arguments
+    Required Parameters
     -----------
     mapname : the name of the current map that has been developed using basemap
-    plong : the longitude of the paleomagnetic pole being plotted (in degrees E)
+    plon : the longitude of the paleomagnetic pole being plotted (in degrees E)
     plat : the latitude of the paleomagnetic pole being plotted (in degrees)
     A95 : the A_95 confidence ellipse of the paleomagnetic pole (in degrees)
 
-    Optional Keywords
+    Optional Parameters (defaults are used if not specified)
     -----------
     label : a string that is the label for the paleomagnetic pole being plotted
     color : the color desired for the symbol and its A95 ellipse (default is 'k' aka black)
     marker : the marker shape desired for the pole mean symbol (default is 'o' aka a circle)
     legend : the default is no legend ('no'). Putting 'yes' will plot a legend.
     """
-    centerlon, centerlat = mapname(plong,plat)
+    centerlon, centerlat = mapname(plon,plat)
     A95_km=A95*111.32
     mapname.scatter(centerlon,centerlat,c=cmap,vmin=vmin,vmax=vmax,s=markersize,marker=marker,color=color,alpha=alpha,label=label,zorder=101)
-    equi_colormap(mapname, plong, plat, A95_km, color, alpha)
+    equi_colormap(mapname, plon, plat, A95_km, color, alpha)
     if legend=='yes':
         plt.legend(loc=2)
 
@@ -1046,13 +1202,24 @@ def plot_vgp(mapname,vgp_lon=None,vgp_lat=None,di_block=None,label='',color='k',
     This function plots a paleomagnetic pole on whatever current map projection
     has been set using the basemap plotting library.
 
+    Before this function is called, a plot needs to be initialized with code
+    that looks something like:
+    >from mpl_toolkits.basemap import Basemap
+    >mapname = Basemap(projection='ortho',lat_0=35,lon_0=200)
+    >plt.figure(figsize=(6, 6))
+    >mapname.drawcoastlines(linewidth=0.25)
+    >mapname.fillcontinents(color='bisque',lake_color='white',zorder=1)
+    >mapname.drawmapboundary(fill_color='white')
+    >mapname.drawmeridians(np.arange(0,360,30))
+    >mapname.drawparallels(np.arange(-90,90,30))
+
     Required Parameters
     -----------
     mapname : the name of the current map that has been developed using basemap
-    plong : the longitude of the paleomagnetic pole being plotted (in degrees E)
+    plon : the longitude of the paleomagnetic pole being plotted (in degrees E)
     plat : the latitude of the paleomagnetic pole being plotted (in degrees)
 
-    Optional Parameters
+    Optional Parameters (defaults are used if not specified)
     -----------
     color : the color desired for the symbol and its A95 ellipse (default is 'k' aka black)
     marker : the marker shape desired for the pole mean symbol (default is 'o' aka a circle)
@@ -1060,7 +1227,11 @@ def plot_vgp(mapname,vgp_lon=None,vgp_lat=None,di_block=None,label='',color='k',
     legend : the default is no legend ('no'). Putting 'yes' will plot a legend.
     """
     if di_block!=None:
-        vgp_lon,vgp_lat = unpack_di_block(di_block)
+        di_lists = unpack_di_block(di_block)
+        if len(di_lists) == 3:
+            vgp_lon,vgp_lat, intensity = di_lists
+        if len(di_lists) == 2:
+            vgp_lon,vgp_lat = di_lists
     centerlon, centerlat = mapname(vgp_lon,vgp_lat)
     mapname.scatter(centerlon,centerlat,20,marker=marker,color=color,label=label,zorder=100)
     if legend=='yes':
@@ -1075,7 +1246,7 @@ def vgp_calc(dataframe,tilt_correction='yes', site_lon = 'site_lon', site_lat = 
     -----------
     dataframe : the name of the pandas.DataFrame containing the data
 
-    ----- the following default keys can be changes by keyword argument -----
+    ----- the following default parameters can be changes by keyword argument -----
     tilt-correction : 'yes' is the default and uses tilt-corrected data (dec_tc, inc_tc), 'no' uses data that is not tilt-corrected and is in geographic coordinates
     dataframe['site_lat'] : the name of the Dataframe column containing the latitude of the site
     dataframe['site_lon'] : the name of the Dataframe column containing the longitude of the site
@@ -1153,7 +1324,7 @@ def sb_vgp_calc(dataframe,site_correction = 'yes', dec_tc = 'dec_tc', inc_tc = '
     dataframe['k'] : fisher precision parameter for directions
     dataframe['vgp_lat'] : VGP latitude
     dataframe['vgp_lon'] : VGP longitude
-    ----- the following default keys can be changes by keyword argument -----
+    ----- the following default parameters can be changes by keyword argument -----
     dataframe['inc_tc'] : tilt-corrected inclination
     dataframe['dec_tc'] : tilt-corrected declination
 
@@ -1233,24 +1404,39 @@ def make_di_block(dec,inc):
 
 def unpack_di_block(di_block):
     """
-    This function unpacks a nested list of [dec,inc,1.] into a list of
-    declination values and a list of inclination values.
+    This function unpacks a nested list of [dec,inc,mag_moment] into a list of
+    declination values, a list of inclination values and a list of magnetic
+    moment values. Mag_moment values are optional, while dec and inc values are
+    required.
     """
     dec_list = []
     inc_list = []
+    moment_list = []
 
     for n in range(0,len(di_block)):
         dec = di_block[n][0]
         inc = di_block[n][1]
         dec_list.append(dec)
         inc_list.append(inc)
-    return dec_list, inc_list
+        if len(di_block[n])>2:
+            moment = di_block[n][2]
+            moment_list.append(moment)
+
+    return dec_list, inc_list, moment_list
 
 
 def make_diddd_array(dec,inc,dip_direction,dip):
     """
-    Some pmag.py functions require a numpy array of dec, inc, dip direction, dip [dec,inc,dd,dip] as input. This
-    function makes such a list
+    Some pmag.py functions such as the bootstrap fold test require a numpy array
+     of dec, inc, dip direction, dip [dec,inc,dd,dip] as input. This function
+     makes such a list.
+
+    Parameters
+    -----------
+    dec : paleomagnetic declination in degrees
+    inc : paleomagnetic inclination in degrees
+    dip_direction : the dip direction of bedding (in degrees between 0 and 360)
+    dip: dip of bedding (in degrees)
     """
     diddd_block=[]
     for n in range(0,len(dec)):
@@ -1271,8 +1457,8 @@ def shoot(lon, lat, azimuth, maxdist=None):
     faz = azimuth * np.pi / 180.
 
     EPS= 0.00000000005
-    # if ((np.abs(np.cos(glat1))<EPS) and not (np.abs(np.sin(faz))<EPS)):
-    #     alert("Only N-S courses are meaningful, starting at a pole!")
+    if ((np.abs(np.cos(glat1))<EPS) and not (np.abs(np.sin(faz))<EPS)):
+        alert("Only N-S courses are meaningful, starting at a pole!")
 
     a=6378.13/1.852
     f=1/298.257223563
@@ -1283,7 +1469,7 @@ def shoot(lon, lat, azimuth, maxdist=None):
     if (cf==0):
         b=0.
     else:
-        b=2. * np.arctan2(tu, cf)
+        b=2. * np.arctan2 (tu, cf)
 
     cu = 1. / np.sqrt(1 + tu * tu)
     su = tu * cu
@@ -1297,7 +1483,7 @@ def shoot(lon, lat, azimuth, maxdist=None):
     tu = s / (r * a * c)
     y = tu
     c = y + 1
-    while (np.abs(y - c) > EPS):
+    while (np.abs (y - c) > EPS):
 
         sy = np.sin(y)
         cy = np.cos(y)
@@ -1375,6 +1561,10 @@ def combine_magic(filenames, outfile):
     Takes a list of magic-formatted files, concatenates them, and creates a single file.
     Returns true if the operation was successful.
 
+    Parameters
+    -----------
+    filenames : list of MagIC formatted files
+    outfile : name of output file
     """
     datasets = []
     if not filenames:
@@ -2118,7 +2308,9 @@ def core_depthplot(input_dir_path='.', meas_file='magic_measurements.txt', spc_f
     return main_plot, figname
 
 
-def download_magic(infile, dir_path='.', input_dir_path='.',overwrite=False,print_progress=True):
+def download_magic(infile, dir_path='.', input_dir_path='.',
+                   overwrite=False, print_progress=True,
+                   data_model=2.5):
     """
     takes the name of a text file downloaded from the MagIC database and
     unpacks it into magic-formatted files. by default, download_magic assumes
@@ -2126,24 +2318,28 @@ def download_magic(infile, dir_path='.', input_dir_path='.',overwrite=False,prin
     provide optional arguments dir_path (where you want the results to go) and
     input_dir_path (where the downloaded file is).
     """
+    if data_model == 2.5:
+        method_col = "magic_method_codes"
+    else:
+        method_col = "method_codes"
     f=open(os.path.join(input_dir_path, infile),'rU')
     infile=f.readlines()
-    File=[]
+    File=[] # will contain all non-blank lines from downloaded file
     for line in infile:
         line=line.replace('\n','')
-        if line[0:4]=='>>>>' or len(line.split('\t'))>1: # skip blank lines
+        if line[0:4]=='>>>>' or len(line.strip()) > 0:  # skip blank lines
             File.append(line)
-    LN=0
+    LN=0 # tracks our progress iterating through File
     type_list=[]
     filenum=0
-    while LN<len(File)-1:
+    while LN < len(File) - 1:
         line=File[LN]
         file_type=line.split('\t')[1]
         file_type=file_type.lower()
-        if file_type=='delimited':file_type=Input[skip].split('\t')[2]
-        if file_type[-1]=="\n":file_type=file_type[:-1]
+        if file_type[-1]=="\n":
+            file_type=file_type[:-1]
         if print_progress==True:
-            print 'working on: ',repr(file_type)
+            print 'working on: ', repr(file_type)
         if file_type not in type_list:
             type_list.append(file_type)
         else:
@@ -2158,6 +2354,7 @@ def download_magic(infile, dir_path='.', input_dir_path='.',overwrite=False,prin
         Recs=[]
         while LN<len(File):
             line=File[LN]
+            # finish up one file type and then break
             if ">>>>" in line and len(Recs)>0:
                 if filenum==0:
                     outfile=dir_path+"/"+file_type.strip()+'.txt'
@@ -2165,25 +2362,21 @@ def download_magic(infile, dir_path='.', input_dir_path='.',overwrite=False,prin
                     outfile=dir_path+"/"+file_type.strip()+'_'+str(filenum)+'.txt'
                 NewRecs=[]
                 for rec in Recs:
-                    if 'magic_method_codes' in rec.keys():
-                        meths=rec['magic_method_codes'].split(":")
+                    if method_col in rec.keys():
+                        meths=rec[method_col].split(":")
                         if len(meths)>0:
                             methods=""
-                            for meth in meths: methods=methods+meth.strip()+":" # get rid of nasty spaces!!!!!!
-                            rec['magic_method_codes']=methods[:-1]
+                            for meth in meths:
+                                methods=methods+meth.strip()+":" # get rid of nasty spaces!!!!!!
+                            rec[method_col]=methods[:-1]
                     NewRecs.append(rec)
                 pmag.magic_write(outfile,Recs,file_type)
                 if print_progress==True:
                     print file_type," data put in ",outfile
-                if file_type =='pmag_specimens' and 'magic_measurements.txt' in File and 'measurement_step_min' in File and 'measurement_step_max' in File: # sort out zeq_specimens and thellier_specimens
-                    os.system('mk_redo.py')
-                    os.system('zeq_magic_redo.py')
-                    os.system('thellier_magic_redo.py')
-                    type_list.append('zeq_specimens')
-                    type_list.append('thellier_specimens')
                 Recs=[]
                 LN+=1
                 break
+            # keep adding records of the same file type
             else:
                 rec=line.split('\t')
                 Rec={}
@@ -2208,24 +2401,26 @@ def download_magic(infile, dir_path='.', input_dir_path='.',overwrite=False,prin
             outfile=dir_path+"/"+file_type.strip()+'_'+str(filenum)+'.txt'
         NewRecs=[]
         for rec in Recs:
-            if 'magic_method_codes' in rec.keys():
-                meths=rec['magic_method_codes'].split(":")
+            if method_col in rec.keys():
+                meths=rec[method_col].split(":")
                 if len(meths)>0:
                     methods=""
-                    for meth in meths: methods=methods+meth.strip()+":" # get rid of nasty spaces!!!!!!
-                    rec['magic_method_codes']=methods[:-1]
+                    for meth in meths:
+                        methods=methods+meth.strip()+":" # get rid of nasty spaces!!!!!!
+                    rec[method_col]=methods[:-1]
             NewRecs.append(rec)
         pmag.magic_write(outfile,Recs,file_type)
         if print_progress==True:
             print file_type," data put in ",outfile
-# look through locations table and create separate directories for each location
+    # look through locations table and create separate directories for each location
     locs,locnum=[],1
-    if 'er_locations' in type_list:
-        locs,file_type=pmag.magic_read(dir_path+'/er_locations.txt')
+    if 'locations' in type_list:
+        locs,file_type=pmag.magic_read(os.path.join(dir_path, 'locations.txt'))
     if len(locs)>0: # at least one location
         for loc in locs:
+            loc_name = loc['location']
             if print_progress==True:
-                print 'location_'+str(locnum)+": ",loc['er_location_name']
+                print 'location_'+str(locnum)+": ", loc_name
             lpath=dir_path+'/Location_'+str(locnum)
             locnum+=1
             try:
@@ -2241,18 +2436,11 @@ def download_magic(infile, dir_path='.', input_dir_path='.',overwrite=False,prin
                 recs,file_type=pmag.magic_read(dir_path+'/'+f+'.txt')
                 if print_progress==True:
                     print len(recs),' read in'
-                if 'results' not in f:
-                    lrecs=pmag.get_dictitem(recs,'er_location_name',loc['er_location_name'],'T')
-                    if len(lrecs)>0:
-                        pmag.magic_write(lpath+'/'+f+'.txt',lrecs,file_type)
-                        if print_progress==True:
-                            print len(lrecs),' stored in ',lpath+'/'+f+'.txt'
-                else:
-                    lrecs=pmag.get_dictitem(recs,'er_location_names',loc['er_location_name'],'T')
-                    if len(lrecs)>0:
-                        pmag.magic_write(lpath+'/'+f+'.txt',lrecs,file_type)
-                        if print_progress==True:
-                            print len(lrecs),' stored in ',lpath+'/'+f+'.txt'
+                lrecs=pmag.get_dictitem(recs, 'location', loc_name, 'T')
+                if len(lrecs)>0:
+                    pmag.magic_write(lpath+'/'+f+'.txt',lrecs,file_type)
+                    if print_progress==True:
+                        print len(lrecs),' stored in ',lpath+'/'+f+'.txt'
     return True
 
 
@@ -2411,7 +2599,7 @@ def upload_magic(concat=0, dir_path='.', data_model=None):
 
 
     if os.path.isfile(up):
-        import validate_upload
+        import validate_upload2 as validate_upload
         validated = False
         validated, errors = validate_upload.read_upload(up, data_model)
 
@@ -2442,6 +2630,149 @@ def upload_magic(concat=0, dir_path='.', data_model=None):
         print "-W- validation of upload file has failed.\nPlease fix above errors and try again.\nYou may run into problems if you try to upload this file to the MagIC database"
         return False, "file validation has failed.  You may run into problems if you try to upload this file.", errors
     return new_up, '', None
+
+def upload_magic3(concat=0, dir_path='.', dmodel=None, vocab=""):
+    """
+    Finds all magic files in a given directory,
+    and compiles them into an upload.txt file
+    which can be uploaded into the MagIC database.
+    returns a tuple of either: (False, error_message, errors)
+    if there was a problem creating/validating the upload file
+    or: (filename, '', None) if the file creation was fully successful.
+    """
+    locations = []
+    concat = int(concat)
+    dtypes = ["locations", "samples", "specimens", "sites", "ages", "measurements",
+                  "criteria", "contribution", "images"]
+    file_names = [os.path.join(dir_path, dtype + ".txt") for dtype in dtypes]
+    con = Contribution(dir_path, vocabulary=vocab)
+    # begin the upload process
+    up = os.path.join(dir_path, "upload.txt")
+    if os.path.exists(up):
+        os.remove(up)
+    RmKeys = ['citation_label', 'compilation', 'calculation_type', 'average_n_lines', 'average_n_planes',
+              'specimen_grade', 'site_vgp_lat', 'site_vgp_lon', 'direction_type', 'specimen_Z',
+              'magic_instrument_codes', 'cooling_rate_corr', 'cooling_rate_mcd', 'anisotropy_atrm_alt',
+              'anisotropy_apar_perc', 'anisotropy_F', 'anisotropy_F_crit', 'specimen_scat',
+              'specimen_gmax','specimen_frac', 'site_vadm', 'site_lon', 'site_vdm', 'site_lat',
+              'measurement_chi', 'specimen_k_prime','specimen_k_prime_sse','external_database_names',
+              'external_database_ids', 'Further Notes', 'Typology', 'Notes (Year/Area/Locus/Level)',
+              'Site', 'Object Number']
+    print "-I- Removing: ", RmKeys
+    last = file_names[-1]
+    first_file = 1
+    failing = []
+    all_failing_items = {}
+    if not dmodel:
+        dmodel = data_model.DataModel()
+    for file_type in dtypes:
+        print "-"
+    # read in the data
+        #Data, file_type = pmag.magic_read(File)
+        if file_type not in con.tables.keys():
+            print "-I- No {} file found, continuing".format(file_type)
+            continue
+        container = con.tables[file_type]
+        df = container.df
+        if len(df):
+            print "-I- {} file successfully read in".format(file_type)
+    # make some adjustments to clean up data
+            # drop non MagIC keys
+            DropKeys = set(RmKeys).intersection(df.columns)
+            df.drop(DropKeys, axis=1, inplace=True)
+            # make sure int_b_beta is positive
+            if 'int_b_beta' in df.columns:
+                df['int_b_beta'] = df['int_b_beta'].astype(float).apply(abs)
+            # make all declinations/azimuths/longitudes in range 0=>360.
+            relevant_cols = val_up3.get_degree_cols(df)
+            for col in relevant_cols:
+                df[col] = df[col].apply(pmag.adjust_val_to_360)
+            # get list of location names
+            if file_type == 'locations':
+                locations = sorted(df['location'].unique())
+            # LJ: need to deal with this
+            # use only highest priority orientation -- not sure how this works
+            elif file_type == 'samples':
+                #orient,az_type=pmag.get_orient(Data,rec['sample'])
+                pass
+            # include only specimen records with samples
+            elif file_type == 'specimens':
+                df = df[df['sample'].notnull()]
+                if 'samples' in con.tables:
+                    samp_df = con.tables['samples'].df
+                    df = df[df['sample'].isin(samp_df.index.unique())]
+            # include only measurements with specmiens
+            elif file_type == 'measurements':
+                df = df[df['specimen'].notnull()]
+                if 'specimens' in con.tables:
+                    spec_df = con.tables['specimens'].df
+                    df = df[df['specimen'].isin(spec_df.index.unique())]
+    # run validations
+            res = val_up3.validate_table(con, file_type)#, verbose=True)
+            if res:
+                dtype, bad_rows, bad_cols, missing_cols, missing_groups, failing_items = res
+                if dtype not in all_failing_items:
+                    all_failing_items[dtype] = {}
+                all_failing_items[dtype]["rows"] = failing_items
+                all_failing_items[dtype]["missing_columns"] = missing_cols
+                all_failing_items[dtype]["missing_groups"] = missing_groups
+                failing.append(dtype)
+    # write out the data
+            if len(df):
+                container.write_magic_file(up, append=True)
+    # write out the file separator
+            f = open(up, 'a')
+            f.write('>>>>>>>>>>\n')
+            f.close()
+            print "-I-", file_type, 'written to ',up
+        else:
+            #print 'File:', File
+            print file_type, 'is bad or non-existent - skipping '
+    ## add to existing file
+    if concat == 1:
+        f = open(up, 'a')
+        f.write('>>>>>>>>>>\n')
+        f.close()
+
+    if not os.path.isfile(up):
+        print "no data found, upload file not created"
+        return False, "no data found, upload file not created", None
+
+    #rename upload.txt according to location + timestamp
+    format_string = "%d.%b.%Y"
+    if locations:
+        locs = set(locations)
+        locs = sorted(locs)[:3]
+        #location = locations[0].replace(' ', '_')
+        locs = [loc.replace(' ', '-') for loc in locs]
+        location = "_".join(locs)
+        new_up = location + '_' + time.strftime(format_string) + '.txt'
+    else:
+        new_up = 'unknown_location_' + time.strftime(format_string) + '.txt'
+
+    new_up = os.path.join(dir_path, new_up)
+    if os.path.isfile(new_up):
+        fname, extension = os.path.splitext(new_up)
+        for i in range(1, 100):
+            if os.path.isfile(fname + "_" + str(i) + extension):
+                continue
+            else:
+                new_up = fname + "_" + str(i) + extension
+                break
+    if not up:
+        print "-W- Could not create an upload file"
+        return False, "Could not create an upload file", None, None
+    os.rename(up, new_up)
+    print "Finished preparing upload file: {} ".format(new_up)
+    if failing:
+        print "-W- validation of upload file has failed."
+        print "These tables have errors: {}".format(", ".join(failing))
+        print "Please fix above errors and try again."
+        print "You may run into problems if you try to upload this file to the MagIC database."
+        return False, "file validation has failed.  You may run into problems if you try to upload this file.", failing, all_failing_items
+    else:
+        print "-I- Your file has passed validation.  You should be able to upload it to the MagIC database without trouble!"
+    return new_up, '', None, None
 
 
 def specimens_results_magic(infile='pmag_specimens.txt', measfile='magic_measurements.txt', sampfile='er_samples.txt', sitefile='er_sites.txt', agefile='er_ages.txt', specout='er_specimens.txt', sampout='pmag_samples.txt', siteout='pmag_sites.txt', resout='pmag_results.txt', critout='pmag_criteria.txt', instout='magic_instruments.txt', plotsites = False, fmt='svg', dir_path='.', cors=[], priorities=['DA-AC-ARM','DA-AC-TRM'], coord='g', user='', vgps_level='site', do_site_intensity=True, DefaultAge=["none"], avg_directions_by_sample=False, avg_intensities_by_sample=False, avg_all_components=False, avg_by_polarity=False, skip_directions=False, skip_intensities=False, use_sample_latitude=False, use_paleolatitude=False, use_criteria='default'):
@@ -2868,7 +3199,7 @@ def specimens_results_magic(infile='pmag_specimens.txt', measfile='magic_measure
                 sitedat=pmag.get_dictitem(SiteNFO,'er_site_name',PmagSiteRec['er_site_name'],'T')[0] # fish out site information (lat/lon, etc.)
                 lat=float(sitedat['site_lat'])
                 lon=float(sitedat['site_lon'])
-                plong,plat,dp,dm=pmag.dia_vgp(dec,inc,a95,lat,lon) # get the VGP for this site
+                plon,plat,dp,dm=pmag.dia_vgp(dec,inc,a95,lat,lon) # get the VGP for this site
                 if PmagSiteRec['site_tilt_correction']=='-1':C=' (spec coord) '
                 if PmagSiteRec['site_tilt_correction']=='0':C=' (geog. coord) '
                 if PmagSiteRec['site_tilt_correction']=='100':C=' (strat. coord) '
@@ -2900,7 +3231,7 @@ def specimens_results_magic(infile='pmag_specimens.txt', measfile='magic_measure
                 site_height=pmag.get_dictitem(height_nfo,'er_site_name',site,'T')
                 if len(site_height)>0:PmagResRec["average_height"]=site_height[0]['site_height']
                 PmagResRec["vgp_lat"]='%7.1f ' % (plat)
-                PmagResRec["vgp_lon"]='%7.1f ' % (plong)
+                PmagResRec["vgp_lon"]='%7.1f ' % (plon)
                 PmagResRec["vgp_dp"]='%7.1f ' % (dp)
                 PmagResRec["vgp_dm"]='%7.1f ' % (dm)
                 PmagResRec["magic_method_codes"]= PmagSiteRec["magic_method_codes"]
@@ -3032,7 +3363,10 @@ def specimens_results_magic(infile='pmag_specimens.txt', measfile='magic_measure
     else: print "No Results level table"
 
 
-def orientation_magic(or_con=1, dec_correction_con=1, dec_correction=0, bed_correction=True, samp_con='1', hours_from_gmt=0, method_codes='', average_bedding=False, orient_file='orient.txt', samp_file='er_samples.txt', site_file='er_sites.txt', output_dir_path='.', input_dir_path='.', append=False):
+def orientation_magic(or_con=1, dec_correction_con=1, dec_correction=0, bed_correction=True,
+                      samp_con='1', hours_from_gmt=0, method_codes='', average_bedding=False,
+                      orient_file='orient.txt', samp_file='er_samples.txt', site_file='er_sites.txt',
+                      output_dir_path='.', input_dir_path='.', append=False, data_model=2):
     """
     use this function to convert tab delimited field notebook information to MagIC formatted tables (er_samples and er_sites)
 
@@ -3128,12 +3462,21 @@ is the percent cooling rate factor to apply to specimens from this sample, DA-CR
     sclass,lithology,sample_type="","",""
     newclass,newlith,newtype='','',''
     BPs=[]# bedding pole declinations, bedding pole inclinations
+    image_file = "er_images.txt"
     #
-    #
+    # use 3.0. default filenames when in 3.0.
+    # but, still allow for custom names
+    data_model = int(data_model)
+    if data_model == 3:
+        if samp_file == "er_samples.txt":
+            samp_file = "samples.txt"
+        if site_file == "er_sites.txt":
+            site_file = "sites.txt"
+        image_file = "images.txt"
     orient_file = os.path.join(input_dir_path,orient_file)
     samp_file = os.path.join(output_dir_path,samp_file)
     site_file = os.path.join(output_dir_path, site_file)
-    image_file= os.path.join(output_dir_path, "er_images.txt")
+    image_file= os.path.join(output_dir_path, image_file)
 
     # validate input
     if '4' in samp_con[0]:
@@ -3152,20 +3495,44 @@ is the percent cooling rate factor to apply to specimens from this sample, DA-CR
         raise Exception("If using magnetic declination convention 2, you must also provide a declincation correction in degrees")
 
     SampRecs,SiteRecs,ImageRecs=[],[],[]
+    SampRecs_sorted, SiteRecs_sorted = {}, {}
 
     if append:
         try:
             SampRecs,file_type=pmag.magic_read(samp_file)
+            # convert 3.0. sample file to 2.5 format
+            if data_model == 3:
+                SampRecs3 = SampRecs
+                SampRecs = []
+                for samp_rec in SampRecs3:
+                    rec = map_magic.mapping(samp_rec, map_magic.samp_magic3_2_magic2_map)
+                    SampRecs.append(rec)
+            SampRecs_sorted=pmag.sort_magic_data(SampRecs,'er_sample_name') # magic_data dictionary sorted by sample_name
             print 'sample data to be appended to: ', samp_file
-        except:
+        except Exception as ex:
+            print ex
             print 'problem with existing file: ',samp_file, ' will create new.'
         try:
             SiteRecs,file_type=pmag.magic_read(site_file)
+            # convert 3.0. site file to 2.5 format
+            if data_model == 3:
+                SiteRecs3 = SiteRecs
+                SiteRecs = []
+                for site_rec in SiteRecs3:
+                    SiteRecs.append(map_magic.mapping(site_rec, map_magic.site_magic3_2_magic2_map))
+            SiteRecs_sorted=pmag.sort_magic_data(SiteRecs,'er_site_name') # magic_data dictionary sorted by site_name
             print 'site data to be appended to: ',site_file
-        except:
+        except Exception as ex:
+            print ex
             print 'problem with existing file: ',site_file,' will create new.'
         try:
             ImageRecs,file_type=pmag.magic_read(image_file)
+            # convert from 3.0. --> 2.5
+            if data_model == 3:
+                ImageRecs3 = ImageRecs
+                ImageRecs = []
+                for image_rec in ImageRecs3:
+                    ImageRecs.append(map_magic.mapping(image_rec, map_magic.image_magic3_2_magic2_map))
             print 'image data to be appended to: ',image_file
         except:
             print 'problem with existing file: ',image_file,' will create new.'
@@ -3178,6 +3545,8 @@ is the percent cooling rate factor to apply to specimens from this sample, DA-CR
     #
     # step through the data sample by sample
     #
+    # use map_magic in here...
+
     for OrRec in OrData:
         if 'mag_azimuth' not in OrRec.keys():
             OrRec['mag_azimuth']=""
@@ -3224,15 +3593,59 @@ is the percent cooling rate factor to apply to specimens from this sample, DA-CR
             if 'method_codes' in OrRec.keys() and OrRec['method_codes'].strip()!="":
                 methcodes=OrRec['method_codes'] # add notes
         codes=methcodes.replace(" ","").split(":")
-        MagRec={}
-        MagRec["er_location_name"]=location_name
+        sample_name=OrRec["sample_name"]
+        # patch added by rshaar 7/2016
+        # if sample_name already exists in er_samples.txt:
+        # merge the new data colmuns calculated by orientation_magic with the existing data colmuns
+        # this is done to make sure no previous data in er_samples.txt and er_sites.txt is lost.
+
+        if sample_name in SampRecs_sorted.keys():
+            Prev_MagRec=SampRecs_sorted[sample_name][-1]
+            MagRec=Prev_MagRec
+        else:
+            Prev_MagRec={}
+            MagRec={}
         MagRec["er_citation_names"]="This study"
-        MagRec['sample_orientation_flag']=sample_orientation_flag
-        MagRec['sample_igsn']=sample_igsn
-        MagRec['sample_texture']=sample_texture
-        MagRec['sample_cooling_rate']=sample_cooling_rate
-        MagRec['cooling_rate_corr']=cooling_rate_corr
-        MagRec['cooling_rate_mcd']=cooling_rate_mcd
+
+        # the following keys were calculated or defined in the code above:
+        for key in ['sample_igsn','sample_texture','sample_cooling_rate','cooling_rate_corr','cooling_rate_mcd','participantlist']:
+            command= "var= %s"%key
+            exec command
+            if var!="":
+                MagRec[key]=var
+            elif  key  in  Prev_MagRec.keys():
+                MagRec[key]=Prev_MagRec[key]
+            else:
+                MagRec[key]=""
+
+            if location_name!="":
+                MagRec["er_location_name"]=location_name
+            elif  "er_location_name"  in  Prev_MagRec.keys():
+                MagRec["er_location_name"]=Prev_MagRec["er_location_name"]
+            else:
+                MagRec["er_location_name"]=""
+
+        # the following keys are taken directly from OrRec dictionary:
+        for key in ["sample_height","er_sample_alternatives"]:
+            if key  in OrRec.keys() and OrRec[key]!= "":
+                MagRec[key]=OrRec[key]
+            elif  key  in  Prev_MagRec.keys():
+                MagRec[key]=Prev_MagRec[key]
+            else:
+                MagRec[key]=""
+
+        # the following keys are cab be defined here as "Not Specified" :
+
+        for key in ["sample_class","sample_lithology","sample_type"]:
+            if key  in OrRec.keys() and OrRec[key]!= "" and  OrRec[key]!= "Not Specified" :
+                MagRec[key]=OrRec[key]
+            elif  key  in  Prev_MagRec.keys() and  Prev_MagRec[key]!= "" and  Prev_MagRec[key]!= "Not Specified" :
+                MagRec[key]=Prev_MagRec[key]
+            else:
+                MagRec[key]="Not Specified"
+
+
+        # (rshaar) From here parse new information and replace previous, if exists:
     #
     # parse information common to all orientation methods
     #
@@ -3241,9 +3654,10 @@ is the percent cooling rate factor to apply to specimens from this sample, DA-CR
             MagRec["sample_igsn"]=OrRec["IGSN"]
         else:
             MagRec["sample_igsn"]=""
-        MagRec["sample_height"],MagRec["sample_bed_dip_direction"],MagRec["sample_bed_dip"]="","",""
-        if "er_sample_alternatives" in OrRec.keys():
-            MagRec["er_sample_alternatives"]=OrRec["sample_alternatives"]
+        #MagRec["sample_height"],MagRec["sample_bed_dip_direction"],MagRec["sample_bed_dip"]="","",""
+        MagRec["sample_bed_dip_direction"],MagRec["sample_bed_dip"]="",""
+        #if "er_sample_alternatives" in OrRec.keys():
+        #    MagRec["er_sample_alternatives"]=OrRec["sample_alternatives"]
         sample=OrRec["sample_name"]
         if OrRec['mag_azimuth']=="" and OrRec['field_dip']!="":
             OrRec['mag_azimuth']='999'
@@ -3260,6 +3674,7 @@ is the percent cooling rate factor to apply to specimens from this sample, DA-CR
         if 'participants' in OrRec.keys() and OrRec['participants']!="" and OrRec['participants']!=participantlist:
             participantlist=OrRec['participants']
         MagRec['er_scientist_mail_names']=participantlist
+        MagRec.pop("participantlist")
         newlat=OrRec["lat"]
         if newlat!="":
             lat=float(newlat)
@@ -3284,27 +3699,7 @@ is the percent cooling rate factor to apply to specimens from this sample, DA-CR
             bed_dip=OrRec['bedding_dip']
         MagRec["sample_bed_dip"]=bed_dip
         MagRec["sample_bed_dip_direction"]=bed_dip_dir
-        if "sample_class" in OrRec.keys():
-            newclass=OrRec["sample_class"]
-        if newclass!="":
-            sclass=newclass
-        if sclass=="":
-            sclass="Not Specified"
-        MagRec["sample_class"]=sclass
-        if "sample_lithology" in OrRec.keys():
-            newlith=OrRec["sample_lithology"]
-        if newlith!="":
-            lithology=newlith
-        if lithology=="":
-            lithology="Not Specified"
-        MagRec["sample_lithology"]=lithology
-        if "sample_type" in OrRec.keys():
-            newtype=OrRec["sample_type"]
-        if newtype!="":
-            sample_type=newtype
-        if sample_type=="":
-            sample_type="Not Specified"
-        MagRec["sample_type"]=sample_type
+        #MagRec["sample_type"]=sample_type
         if labdip!="":
             MagRec["sample_dip"]='%7.1f'%labdip
         else:
@@ -3335,7 +3730,7 @@ is the percent cooling rate factor to apply to specimens from this sample, DA-CR
                 stratpos=OrRec["stratigraphic_height"]
             elif OrRec["stratigraphic_height"]=='-1':
                 MagRec["sample_height"]=""   # make empty
-            else:
+            elif stratpos != "" :
                 MagRec["sample_height"]=stratpos   # keep last record if blank
 #
         if dec_correction_con==1 and MagRec['sample_azimuth']!="": # get magnetic declination (corrected with igrf value)
@@ -3369,8 +3764,10 @@ is the percent cooling rate factor to apply to specimens from this sample, DA-CR
         MagRec['sample_description']=sample_description
     #
     # work on the site stuff too
-        if 'site_name' in OrRec.keys():
+        if 'site_name' in OrRec.keys() and OrRec['site_name']!="":
             site=OrRec['site_name']
+        elif 'site_name' in Prev_MagRec.keys() and  Prev_MagRec['site_name']!="":
+            site=Prev_MagRec['site_name']
         else:
             site=pmag.parse_site(OrRec["sample_name"],samp_con,Z) # parse out the site name
         MagRec["er_site_name"]=site
@@ -3413,18 +3810,50 @@ is the percent cooling rate factor to apply to specimens from this sample, DA-CR
                     ImageOuts.append(ImageRec)
         if site not in sitelist:
             sitelist.append(site) # collect unique site names
-            SiteRec={}
+            # patch added by rshaar 7/2016
+            # if sample_name already exists in er_samples.txt:
+            # merge the new data colmuns calculated by orientation_magic with the existing data colmuns
+            # this is done to make sure no previous data in er_samples.txt and er_sites.txt is lost.
+
+            if site in SiteRecs_sorted.keys():
+                Prev_MagRec=SiteRecs_sorted[site][-1]
+                SiteRec=Prev_MagRec
+            else:
+                Prev_MagRec={}
+                SiteRec={}
+            SiteRec["er_citation_names"]="This study"
             SiteRec["er_site_name"]=site
             SiteRec["site_definition"]="s"
-            SiteRec["er_location_name"]=location_name
-            SiteRec["er_citation_names"]="This study"
-            SiteRec["site_lat"]=MagRec["sample_lat"]
-            SiteRec["site_lon"]=MagRec["sample_lon"]
-            SiteRec["site_height"]=MagRec["sample_height"]
-            SiteRec["site_class"]=MagRec["sample_class"]
-            SiteRec["site_lithology"]=MagRec["sample_lithology"]
-            SiteRec["site_type"]=MagRec["sample_type"]
-            SiteRec["site_description"]=site_description
+
+            for key in ["er_location_name"]:
+                if key in Prev_MagRec.keys() and Prev_MagRec[key]!="":
+                    SiteRec[key]=Prev_MagRec[key]
+                else:
+                    SiteRec[key]=""
+
+            for key in ["lat","lon","height"]:
+                if "site_"+key in Prev_MagRec.keys() and Prev_MagRec["site_"+key]!="":
+                    SiteRec["site_"+key]=Prev_MagRec["site_"+key]
+                else:
+                    SiteRec["site_"+key]=MagRec["sample_"+key]
+
+
+            #SiteRec["site_lat"]=MagRec["sample_lat"]
+            #SiteRec["site_lon"]=MagRec["sample_lon"]
+            #SiteRec["site_height"]=MagRec["sample_height"]
+
+            for key in ["class","lithology","type"]:
+                if "site_"+key in Prev_MagRec.keys() and Prev_MagRec["site_"+key]!="Not Specified":
+                    SiteRec["site_"+key]=Prev_MagRec["site_"+key]
+                else:
+                    SiteRec["site_"+key]=MagRec["sample_"+key]
+
+            #SiteRec["site_class"]=MagRec["sample_class"]
+            #SiteRec["site_lithology"]=MagRec["sample_lithology"]
+            #SiteRec["site_type"]=MagRec["sample_type"]
+
+            if site_description != "": # overwrite only if site_description has something
+                SiteRec["site_description"]=site_description
             SiteOuts.append(SiteRec)
         if sample not in samplelist:
             samplelist.append(sample)
@@ -3540,16 +3969,37 @@ is the percent cooling rate factor to apply to specimens from this sample, DA-CR
     print 'saving data...'
     SampsOut,keys=pmag.fillkeys(Samps)
     Sites,keys=pmag.fillkeys(SiteOuts)
-    wrote_samps = pmag.magic_write(samp_file,SampsOut,"er_samples")
-    wrote_sites = pmag.magic_write(site_file,Sites,"er_sites")
+    if data_model == 3:
+        SampsOut3 = []
+        Sites3 = []
+        for samp_rec in SampsOut:
+            new_rec = map_magic.mapping(samp_rec, map_magic.samp_magic2_2_magic3_map)
+            SampsOut3.append(new_rec)
+        for site_rec in Sites:
+            new_rec = map_magic.mapping(site_rec, map_magic.site_magic2_2_magic3_map)
+            Sites3.append(new_rec)
+        wrote_samps = pmag.magic_write(samp_file,SampsOut3,"samples")
+        wrote_sites = pmag.magic_write(site_file,Sites3,"sites")
+    else:
+        wrote_samps = pmag.magic_write(samp_file,SampsOut,"er_samples")
+        wrote_sites = pmag.magic_write(site_file,Sites,"er_sites")
     if wrote_samps:
         print "Data saved in ", samp_file,' and ',site_file
     else:
         print "No data found"
     if len(ImageOuts)>0:
+        # need to do conversion here 3.0. --> 2.5
         Images,keys=pmag.fillkeys(ImageOuts)
-        pmag.magic_write(image_file,Images,"er_images")
-        print "Image info saved in ",image_file
+        image_type = "er_images"
+        if data_model == 3:
+            # convert 2.5 --> 3.0.
+            image_type = "images"
+            Images2 = Images
+            Images = []
+            for image_rec in Images2:
+                Images.append(map_magic.mapping(image_rec, map_magic.image_magic2_2_magic3_map))
+        pmag.magic_write(image_file, Images, image_type)
+        print "Image info saved in ", image_file
     return True, None
 
 
@@ -5152,7 +5602,7 @@ def dayplot(path_to_file = '.',hyst_file="rmag_hysteresis.txt",
     (Neel, 1955; plots after Tauxe et al., 2002); plots 'linear mixing'
     curve from Dunlop and Carter-Stiglitz (2006).
 
-    Optional Keywords (defaults are used if not specified)
+    Optional Parameters (defaults are used if not specified)
     ----------
     path_to_file : path to directory that contains files (default is current directory, '.')
     hyst_file : hysteresis file (default is 'rmag_hysteresis.txt')
@@ -5236,12 +5686,12 @@ def smooth(x,window_len,window='bartlett'):
     with average of the first (last) ten values of the signal, to evoid jumps
     at the beggining/end. Output is an array of the smoothed signal.
 
-    Required Arguments
+    Required Parameters
     ----------
     x : the input signal, equaly spaced!
     window_len : the dimension of the smoothing window
 
-    Optional Keywords (defaults are used if not specified)
+    Optional Parameters (defaults are used if not specified)
     ----------
     window : type of window from numpy library ['flat','hanning','hamming','bartlett','blackman']
         (default is Bartlett)
@@ -5287,7 +5737,7 @@ def deriv1(x,y,i,n):
     'i' is calculated by least square fit of 'n' points before
     and after position.
 
-    Required Arguments
+    Required Parameters
     ----------
     x : array of x axis
     y : array of y axis
@@ -5317,7 +5767,7 @@ def curie(path_to_file = '.',file_name = 'magic_measurements.txt',
     The estimated curie temp. is the maximum of the 2nd derivative.
     Temperature steps should be in multiples of 1.0 degrees.
 
-    Optional Keywords (defaults are used if not specified)
+    Optional Parameters (defaults are used if not specified)
     ----------
     path_to_file : path to directory that contains file (default is current directory, '.')
     file_name : name of file to be opened (default is 'magic_measurements.txt')
@@ -5471,7 +5921,7 @@ def chi_magic(path_to_file = '.', file_name = 'magic_measurements.txt',
     Generates plots that compare susceptibility to temperature at different
     frequencies.
 
-    Optional Keywords (defaults are used if not specified)
+    Optional Parameters (defaults are used if not specified)
     ----------
     path_to_file : path to directory that contains file (default is current directory, '.')
     file_name : name of file to be opened (default is 'magic_measurements.txt')
@@ -5586,7 +6036,7 @@ def pmag_results_extract(res_file="pmag_results.txt", crit_file="", spec_file=""
     Possible output files: Directions, Intensities, SiteNfo, Criteria,
                            Specimens
 
-    Optional Keywords (defaults are used if not specified)
+    Optional Parameters (defaults are used if not specified)
     ----------
     res_file : name of pmag_results file (default is "pmag_results.txt")
     crit_file : name of criteria file (default is "pmag_criteria.txt")
@@ -5941,7 +6391,7 @@ def demag_magic(path_to_file = '.', file_name = 'magic_measurements.txt',
     Takes demagnetization data (from magic_measurements file) and outputs
     intensity plots (with optional save).
 
-    Arguments
+    Parameters
     -----------
     path_to_file : path to directory that contains files (default is current directory, '.')
     file_name : name of measurements file (default is 'magic_measurements.txt')
@@ -6094,7 +6544,7 @@ def iplotHYS(fignum,B,M,s):
     This function has been adapted from pmagplotlib.iplotHYS for specific use
     within a Jupyter notebook.
 
-    Arguments
+    Parameters
     -----------
     fignum : reference number for matplotlib figure being created
     B : list of B (flux density) values of hysteresis experiment
@@ -6194,7 +6644,7 @@ def hysteresis_magic(path_to_file = '.',hyst_file="rmag_hysteresis.txt",
     If selected, this function also plots hysteresis loops, delta M curves,
     d (Delta M)/dB curves, and IRM backfield curves.
 
-    Arguments (defaults are used if not specified)
+    Parameters (defaults are used if not specified)
     ----------
     path_to_file : path to directory that contains files (default is current directory, '.')
     hyst_file : hysteresis file (default is 'rmag_hysteresis.txt')
@@ -6377,11 +6827,11 @@ def find_ei(data, nb=1000, save = False, save_folder = '.', fmt='svg',
     Fisherian distribution.
     Finds bootstrap confidence bounds
 
-    Arguments
+    Required Parameter
     -----------
     data: a nested list of dec/inc pairs
 
-    Keywords
+    Optional Parameters (defaults are used unless specified)
     -----------
     nb: number of bootstrapped pseudo-samples (default is 1000)
     save: Boolean argument to save plots (default is False)
@@ -6471,16 +6921,202 @@ def find_ei(data, nb=1000, save = False, save_folder = '.', fmt='svg',
     pmagplotlib.plotVs(cdf_fig_num,[Io],'k','-')
 
     # plot corrected directional data
-    decs, incs = unpack_di_block(data)
-    unsquished_incs = unsquish(incs, flat_f)
-    plt.figure(num=4,figsize=(4,4))
-    plot_net(4)
-    plot_di(decs,unsquished_incs)
 
+    di_lists = unpack_di_block(data)
+    if len(di_lists) == 3:
+        decs, incs, intensity = di_lists
+    if len(di_lists) == 2:
+        decs, incs = di_lists
+    if flat_f:
+        unsquished_incs = unsquish(incs, flat_f)
+        plt.figure(num=4,figsize=(4,4))
+        plot_net(4)
+        plot_di(decs,unsquished_incs)
+    else:
+        plt.figure(num=4,figsize=(4,4))
+        plot_net(4)
+        plot_di(decs,incs)
+
+    if (Inc, Elong, flat_f) == (0, 0, 0):
+        print "PATHOLOGICAL DISTRIBUTION"
     print "The original inclination was: " + str(Io)
     print ""
     print "The corrected inclination is: " + str(Inc)
     print "with bootstrapped confidence bounds of: " +  str(I[lower]) + ' to ' + str(I[upper])
     print "and elongation parameter of: " + str(Elong)
+    print "The flattening factor is: " + str(flat_f)
     if return_new_dirs is True:
         return make_di_block(decs, unsquished_incs)
+
+def plate_rate_mc(pole1_plon,pole1_plat,pole1_kappa,pole1_N,pole1_age,pole1_age_error,
+                  pole2_plon,pole2_plat,pole2_kappa,pole2_N,pole2_age,pole2_age_error,
+                  ref_loc_lon,ref_loc_lat,samplesize=10000, plot=True,
+                  savefig=True, save_directory='./', figure_name=''):
+    """
+    Determine the latitudinal motion implied by a pair of poles and utilize
+    the Monte Carlo sampling method of Swanson-Hysell (2014) to determine the
+    associated uncertainty.
+
+    These values are required for pole1 and pole2:
+    ----------------------------
+    plon : longitude of pole
+    plat : latitude of pole
+    kappa : Fisher precision parameter for VPGs in pole
+    N : number of VGPs in pole
+    age : age assigned to pole in Ma
+    age_error : 1 sigma age uncertainty in million years
+
+    Additional required parameters:
+    ----------------------------
+    ref_loc_lon : longitude of reference location
+    ref_loc_lat : latitude of reference location
+    samplesize : number of draws from pole and age distributions (default set to 10000)
+
+    Optional parameters for plotting and saving figures (3 are generated):
+    ----------------------------
+    plot : whether to make figures (default is True)
+    savefig : whether to save figures (default is True)
+    save_directory = default is local directory
+    figure_name = prefix for file names
+
+    Returns
+    ----------------------------
+    rate, 2.5 percentile rate, 97.5 percentile rate
+    """
+    from mpl_toolkits.basemap import Basemap
+    from scipy import stats
+
+    ref_loc = [ref_loc_lon,ref_loc_lat]
+    pole1 = (pole1_plon, pole1_plat)
+    pole1_paleolat = 90-pmag.angle(pole1,ref_loc)
+    pole2=(pole2_plon, pole2_plat)
+    pole2_paleolat = 90-pmag.angle(pole2,ref_loc)
+    print "The paleolatitude for ref_loc resulting from pole 1 is:" + str(pole1_paleolat)
+    print "The paleolatitude for ref_loc resulting from pole 2 is:" + str(pole2_paleolat)
+    rate=((pole1_paleolat-pole2_paleolat)*111*100000)/((pole1_age-pole2_age)*1000000)
+    print "The rate of paleolatitudinal change implied by the poles pairs in cm/yr is:" + str(rate)
+
+    pole1_MCages = np.random.normal(pole1_age,pole1_age_error,samplesize)
+    pole2_MCages = np.random.normal(pole2_age,pole2_age_error,samplesize)
+
+    plt.hist(pole1_MCages,100,histtype='stepfilled',color='darkred',label='Pole 1 ages')
+    plt.hist(pole2_MCages,100,histtype='stepfilled',color='darkblue',label='Pole 2 ages')
+    plt.xlabel('Age (Ma)')
+    plt.ylabel('n')
+    plt.legend(loc=3)
+    if savefig == True:
+        plot_extension = '_1.svg'
+        plt.savefig(save_directory + figure_name + plot_extension)
+    plt.show()
+
+    pole1_MCpoles = []
+    pole1_MCpole_lat = []
+    pole1_MCpole_long = []
+    pole1_MCpaleolat = []
+    for n in range(samplesize):
+        vgp_samples = []
+        for vgp in range(pole1_N):
+            #pmag.dev returns a direction from a fisher distribution with specified kappa
+            direction_atN = pmag.fshdev(pole1_kappa)
+            #this direction is centered at latitude of 90 degrees and needs to be rotated
+            #to be centered on the mean pole position
+            tilt_direction = pole1_plon
+            tilt_amount = 90-pole1_plat
+            direction = pmag.dotilt(direction_atN[0],direction_atN[1],tilt_direction,tilt_amount)
+            vgp_samples.append([direction[0],direction[1],1.])
+        mean = pmag.fisher_mean(vgp_samples)
+        mean_pole_position = (mean['dec'],mean['inc'])
+        pole1_MCpoles.append([mean['dec'],mean['inc'],1.])
+        pole1_MCpole_lat.append(mean['inc'])
+        pole1_MCpole_long.append(mean['dec'])
+        paleolat = 90-pmag.angle(mean_pole_position,ref_loc)
+        pole1_MCpaleolat.append(paleolat[0])
+
+    pole2_MCpoles=[]
+    pole2_MCpole_lat=[]
+    pole2_MCpole_long=[]
+    pole2_MCpaleolat=[]
+    for n in range(samplesize):
+        vgp_samples=[]
+        for vgp in range(pole2_N):
+            #pmag.dev returns a direction from a fisher distribution with specified kappa
+            direction_atN=pmag.fshdev(pole2_kappa)
+            #this direction is centered at latitude of 90 degrees and needs to be rotated
+            #to be centered on the mean pole position
+            tilt_direction=pole2_plon
+            tilt_amount=90-pole2_plat
+            direction=pmag.dotilt(direction_atN[0],direction_atN[1],tilt_direction,tilt_amount)
+            vgp_samples.append([direction[0],direction[1],1.])
+        mean=pmag.fisher_mean(vgp_samples)
+        mean_pole_position=(mean['dec'],mean['inc'])
+        pole2_MCpoles.append([mean['dec'],mean['inc'],1.])
+        pole2_MCpole_lat.append(mean['inc'])
+        pole2_MCpole_long.append(mean['dec'])
+        paleolat=90-pmag.angle(mean_pole_position,ref_loc)
+        pole2_MCpaleolat.append(paleolat[0])
+
+    if plot is True:
+        plt.figure(figsize=(5, 5))
+        m = Basemap(projection='ortho',lat_0=35,lon_0=200,resolution='c',area_thresh=50000)
+        m.drawcoastlines(linewidth=0.25)
+        m.fillcontinents(color='bisque',lake_color='white',zorder=1)
+        m.drawmapboundary(fill_color='white')
+        m.drawmeridians(np.arange(0,360,30))
+        m.drawparallels(np.arange(-90,90,30))
+
+        plot_vgp(m,pole1_MCpole_long,pole1_MCpole_lat,color='b')
+        plot_vgp(m,pole2_MCpole_long,pole2_MCpole_lat,color='g')
+        if savefig == True:
+            plot_extension = '_2.svg'
+            plt.savefig(save_directory + figure_name + plot_extension)
+        plt.show()
+
+    #calculating the change in paleolatitude between the Monte Carlo pairs
+    pole1_pole2_Delta_degrees=[]
+    pole1_pole2_Delta_kilometers=[]
+    pole1_pole2_Delta_myr=[]
+    pole1_pole2_degrees_per_myr=[]
+    pole1_pole2_cm_per_yr=[]
+
+    for n in range(samplesize):
+        Delta_degrees=pole1_MCpaleolat[n]-pole2_MCpaleolat[n]
+        Delta_Myr=pole1_MCages[n]-pole2_MCages[n]
+        pole1_pole2_Delta_degrees.append(Delta_degrees)
+        degrees_per_myr=Delta_degrees/Delta_Myr
+        cm_per_yr=((Delta_degrees*111)*100000)/(Delta_Myr*1000000)
+        pole1_pole2_degrees_per_myr.append(degrees_per_myr)
+        pole1_pole2_cm_per_yr.append(cm_per_yr)
+
+    if plot is True:
+        plotnumber=100
+        plt.figure(num=None, figsize=(10, 4))
+        plt.subplot(1, 2, 1)
+        for n in range(plotnumber):
+            plt.plot([pole1_MCpaleolat[n],pole2_MCpaleolat[n]],
+                     [pole1_MCages[n],pole2_MCages[n]],'k-',linewidth=0.1,alpha=0.3)
+        plt.scatter(pole1_MCpaleolat[:plotnumber],pole1_MCages[:plotnumber],color='b',s=3)
+        plt.scatter(pole1_paleolat,pole1_age,color='lightblue',s=100, edgecolor='w', zorder=10000)
+        plt.scatter(pole2_MCpaleolat[:plotnumber],pole2_MCages[:plotnumber],color='g',s=3)
+        plt.scatter(pole2_paleolat,pole2_age,color='lightgreen',s=100, edgecolor='w', zorder=10000)
+        plt.plot([pole1_paleolat,pole2_paleolat],[pole1_age,pole2_age],'w-',linewidth=2)
+        plt.gca().invert_yaxis()
+        plt.xlabel('paleolatitude (degrees)',size=14)
+        plt.ylabel('time (Ma)',size=14)
+
+        plt.subplot(1, 2, 2)
+        plt.hist(pole1_pole2_cm_per_yr,bins=600)
+        plt.ylabel('n',size=14)
+        plt.xlabel('latitudinal drift rate (cm/yr)',size=14)
+        #plt.xlim([0,90])
+        if savefig == True:
+            plot_extension = '_3.svg'
+            plt.savefig(save_directory + figure_name + plot_extension)
+        plt.show()
+
+    twopointfive_percentile=stats.scoreatpercentile(pole1_pole2_cm_per_yr,2.5)
+    fifty_percentile=stats.scoreatpercentile(pole1_pole2_cm_per_yr,50)
+    ninetysevenpointfive_percentile=stats.scoreatpercentile(pole1_pole2_cm_per_yr,97.5)
+    print "2.5th percentile is: " + str(round(twopointfive_percentile,2)) + " cm/yr"
+    print "50th percentile is: " + str(round(fifty_percentile,2)) + " cm/yr"
+    print "97.5th percentile is: " + str(round(ninetysevenpointfive_percentile,2)) + " cm/yr"
+    return rate[0], twopointfive_percentile, ninetysevenpointfive_percentile
