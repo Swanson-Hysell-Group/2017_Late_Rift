@@ -1191,7 +1191,7 @@ def plot_pole_colorbar(mapname,plon,plat,A95,cmap,vmin,vmax,label='',color='k',m
     """
     centerlon, centerlat = mapname(plon,plat)
     A95_km=A95*111.32
-    mapname.scatter(centerlon,centerlat,c=cmap,vmin=vmin,vmax=vmax,s=markersize,marker=marker,color=color,alpha=alpha,label=label,zorder=101)
+    mapname.scatter(centerlon,centerlat,c=cmap,vmin=vmin,vmax=vmax,s=markersize,marker=marker,alpha=alpha,label=label,zorder=101)
     equi_colormap(mapname, plon, plat, A95_km, color, alpha)
     if legend=='yes':
         plt.legend(loc=2)
@@ -1532,7 +1532,7 @@ def equi(m, centerlon, centerlat, radius, color):
     Y.append(Y[0])
 
     X,Y = m(X,Y)
-    plt.plot(X,Y,color)
+    plt.plot(X,Y,color=color)
 
 
 def equi_colormap(m, centerlon, centerlat, radius, color, alpha='1.0'):
@@ -1553,7 +1553,7 @@ def equi_colormap(m, centerlon, centerlat, radius, color, alpha='1.0'):
     Y.append(Y[0])
 
     X,Y = m(X,Y)
-    plt.plot(X,Y,color,alpha=alpha)
+    plt.plot(X,Y,color=color,alpha=alpha)
 
 
 def combine_magic(filenames, outfile):
