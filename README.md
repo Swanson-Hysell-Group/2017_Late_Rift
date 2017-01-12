@@ -1,5 +1,8 @@
 # The end of Midcontinent Rift magmatism and the paleogeography of Laurentia
-This repository includes data and analysis associated with a manuscript in review entitled **The end of Midcontinent Rift magmatism and the paleogeography of Laurentia** by Luke M. Fairchild, Nicholas L. Swanson-Hysell, Jahandar Ramenzani, Courtney J. Sprain, and Samuel A. Bowring.
+
+This repository includes data and analysis associated associated with the following paper: 
+
+Fairchild, L.M., Swanson-Hysell, N.L., Ramenzani, J., Sprain, C.J., and Bowring, S.A. (2017), The end of Midcontinent Rift magmatism and the paleogeography of Laurentia, Lithosphere, doi:10.1130/L580.1. 
 
 This GitHub repository is organized by the following folders.
 
