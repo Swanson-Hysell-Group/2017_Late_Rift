@@ -2,7 +2,7 @@
 
 This repository includes data and analysis associated associated with the following paper: 
 
-Fairchild, L.M., Swanson-Hysell, N.L., Ramenzani, J., Sprain, C.J., and Bowring, S.A. (2017), The end of Midcontinent Rift magmatism and the paleogeography of Laurentia, Lithosphere, doi:10.1130/L580.1. 
+Fairchild, L. M., Swanson-Hysell, N. L., Ramezani, J., Sprain, C. J., & Bowring, S. A. (2017). **The end of Midcontinent Rift magmatism and the paleogeography of Laurentia**. Lithosphere, 9,  https://doi.org/10.1130/L580.1. 
 
 This GitHub repository is organized by the following folders.
 
@@ -20,7 +20,7 @@ Michipicoten bedding/tilt correction analysis:
 https://nbviewer.jupyter.org/github/swanson-hysell-group/2016_Late_Rift/blob/master/Code/Michipicoten_tilt_analysis/Michipicoten_structural_analysis.ipynb
 
 ## Data
-This folder contains paleomagnetic data of this study (MagIC-formatted files), CSV files of previously developed data used in our analysis (see references in manuscript), and reconstruction documents for use within the GPlates software (http://www.gplates.org). All paleomagnetic data of this study has been uploaded to the Magnetics Information Consortium (MagIC) database and can be viewed at http://earthref.org/MagIC/11452/.
+This folder contains paleomagnetic data of this study (MagIC-formatted files), CSV files of previously developed data used in our analysis (see references in manuscript), and reconstruction documents for use within the GPlates software (http://www.gplates.org). All paleomagnetic data of this study has been uploaded to the Magnetics Information Consortium (MagIC) database and can be viewed at: https://earthref.org/MagIC/doi/10.1130/L580.1.
 
 ## Additional Notes
 - [**PmagPy Open-Source Software License**](./Code/pmagpy_3_4/license.txt)
